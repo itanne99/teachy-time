@@ -1,0 +1,29 @@
+services:
+  db-teachy-time:
+    image: postgres:16-alpine # Using a lightweight Alpine-based image for PostgreSQL 16
+    restart: always
+    environment:
+      POSTGRES_USER: ${DBUSERNAME}
+      POSTGRES_PASSWORD: ${DBPASSWORD}
+      POSTGRES_DB: main
+    env_file: ".env"
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_teachy_time:/var/lib/postgresql/data
+  bytebase-teachy-time:
+    image: bytebase/bytebase:latest
+    container_name: bytebase
+    environment:
+      PG_URL: ${ByteBasePGURL}
+    restart: always
+    ports:
+      - "8080:8080"
+    volumes:
+      - bytebase_data_teachy_time:/var/opt/bytebase
+
+volumes:
+  db_teachy_time: # Defines the named volume for database persistence
+    driver: local
+  bytebase_data_teachy_time: # Defines the named volume for Bytebase data persistence
+    driver: local
