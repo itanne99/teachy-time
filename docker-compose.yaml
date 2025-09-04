@@ -1,6 +1,7 @@
 services:
   db-teachy-time:
     image: postgres:16-alpine # Using a lightweight Alpine-based image for PostgreSQL 16
+    container_name: db-teachy-time
     restart: always
     environment:
       POSTGRES_USER: ${DBUSERNAME}
@@ -13,7 +14,7 @@ services:
       - db_teachy_time:/var/lib/postgresql/data
   bytebase-teachy-time:
     image: bytebase/bytebase:latest
-    container_name: bytebase
+    container_name: bytebase-teachy-time
     environment:
       PG_URL: ${ByteBasePGURL}
     restart: always
