@@ -5,7 +5,7 @@ import CommonUtils from '@/services/CommonUtils';
 import { AlterAlarm } from '@/components/models/AlterAlarm';
 
 export default function EditAlarms({useStore}) {
-  const [activeDay, setActiveDay] = useState('Monday');
+  const [activeDay, setActiveDay] = useState('');
   const alarms = useStore((state) => state.alarms);
   const setAlarms = useStore((state) => state.setAlarms);
   const [sorting, setSorting] = React.useState([])
@@ -16,9 +16,15 @@ export default function EditAlarms({useStore}) {
   const [validationError, setValidationError] = useState(null);
   const [confirmCopy, setConfirmCopy] = useState({}); // State to manage confirmation for copying
 
+  // Set active day to current day on component mount
+  useEffect(() => {
+    setActiveDay(CommonUtils.getCurrentDay());
+  }, []);
+
   // Update Alarms state with Session State
   useEffect(() => {
     console.log('Alarms updated:', alarms);
+    setSorting([{ id: 'time', desc: false }]); // Sort by time whenever alarms are updated
   }, [alarms]);
 
   // Function to add a new alarm to the active day
