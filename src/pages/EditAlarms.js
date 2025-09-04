@@ -4,9 +4,10 @@ import { useReactTable, getCoreRowModel, getSortedRowModel } from '@tanstack/rea
 import CommonUtils from '@/services/CommonUtils';
 import { AlterAlarm } from '@/components/models/AlterAlarm';
 
-export default function EditAlarms() {
+export default function EditAlarms({useStore}) {
   const [activeDay, setActiveDay] = useState('Monday');
-  const [alarms, setAlarms] = useState(() => {return {}});
+  const alarms = useStore((state) => state.alarms);
+  const setAlarms = useStore((state) => state.setAlarms);
   const [sorting, setSorting] = React.useState([])
   const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -14,16 +15,6 @@ export default function EditAlarms() {
   const [editingAlarm, setEditingAlarm] = useState(null);
   const [validationError, setValidationError] = useState(null);
   const [confirmCopy, setConfirmCopy] = useState({}); // State to manage confirmation for copying
-
-  // Initialize alarms for each day of the week
-  useEffect(() => {
-    const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    const initialAlarms = daysOfWeek.reduce((acc, day) => {
-      acc[day] = [];
-      return acc;
-    }, {});
-    setAlarms(initialAlarms);
-  }, []);
 
   // Update Alarms state with Session State
   useEffect(() => {
@@ -49,10 +40,10 @@ export default function EditAlarms() {
 
   // Function to remove an alarm from the active day
   const removeAlarm = (id) => {
-    setAlarms(prevAlarms => ({
-      ...prevAlarms,
-      [activeDay]: prevAlarms[activeDay].filter(alarm => alarm.id !== id),
-    }));
+    setAlarms({
+      ...alarms,
+      [activeDay]: alarms[activeDay].filter(alarm => alarm.id !== id),
+    });
   };
 
   const handleSaveAlarm = (alarmToSave) => {
@@ -67,17 +58,17 @@ export default function EditAlarms() {
 
     if (alarmToSave.id) {
       // Update existing alarm
-      setAlarms(prev => ({
-        ...prev,
-        [activeDay]: prev[activeDay].map(a => a.id === alarmToSave.id ? alarmToSave : a)
-      }));
+      setAlarms({
+        ...alarms,
+        [activeDay]: alarms[activeDay].map(a => a.id === alarmToSave.id ? alarmToSave : a)
+      });
     } else {
       // Add new alarm
       const newAlarm = { ...alarmToSave, id: Date.now() };
-      setAlarms(prev => ({
-        ...prev,
-        [activeDay]: [...prev[activeDay], newAlarm]
-      }));
+      setAlarms({
+        ...alarms,
+        [activeDay]: [...alarms[activeDay], newAlarm],
+      });
     }
 
     setShowModal(false);
@@ -102,10 +93,10 @@ export default function EditAlarms() {
 
   // Actual copy logic
   const copyAlarms = (fromDay, toDay) => { // Renamed to be internal
-    setAlarms(prevAlarms => ({
-      ...prevAlarms,
-      [toDay]: [...prevAlarms[fromDay]],
-    }));
+    setAlarms({
+      ...alarms,
+      [toDay]: [...alarms[fromDay]],
+    });
   };
 
   // Define columns for TanStack Table
