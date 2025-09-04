@@ -16,7 +16,7 @@ export const NavBar = () => {
   const pages = [
     { name: 'Home', path: '/', type: 'link' },
     { name: 'About', path: '/about', type: 'link' },
-    { name: 'Contact', path: '/contact', type: 'link' },
+    { name: 'Edit', path: '/EditAlarms', type: 'link' },
   ]
 
 
