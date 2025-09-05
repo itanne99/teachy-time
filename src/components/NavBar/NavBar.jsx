@@ -6,7 +6,7 @@ import supabase from '@/db/supabase';
 import ProfileDropdown from './ProfileDropdown';
 import { PersonCircle } from 'react-bootstrap-icons';
 
-export const NavBar = () => {
+export const NavBar = ({ useStore }) => {
   const router = useRouter();
   const currentPath = router.asPath;
   const [session, setSession] = useState(null);
@@ -57,7 +57,7 @@ export const NavBar = () => {
         </Dropdown>
       );
     } else {
-      return <ProfileDropdown />;
+      return <ProfileDropdown useStore={useStore} />;
     }
   }
 
