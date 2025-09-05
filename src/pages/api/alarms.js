@@ -1,5 +1,5 @@
-import supabase from "@/db/supabase";
-import supabaseService from "@/db/supabaseService";
+import createClient from "@/supabase/api";
+import supabaseService from "@/supabase/supabaseService";
 
 export default async function handler(req, res) {
   const { method, query, body } = req;
@@ -13,6 +13,8 @@ export default async function handler(req, res) {
     5: 'Friday',
     6: 'Saturday',
   };
+
+  const supabase = createClient(req, res);
 
   // Helper function to check for existing alarms
   const checkExistingAlarm = async (alarmIdentifier, user_id) => {

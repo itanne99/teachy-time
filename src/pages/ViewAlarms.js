@@ -7,6 +7,7 @@ import UpcomingAlarmBar from "@/components/UpcomingAlarm/UpcomingAlarmBar";
 function ViewAlarms({ useStore }) {
   const alarms = useStore((state) => state.alarms);
   console.log('CommonUtils.getCurrentDay():', CommonUtils.getCurrentDay());
+  console.log('All alarms:', alarms);
 
 
   return (

@@ -1,7 +1,9 @@
-import supabase from "@/db/supabase";
+import createClient from "@/supabase/api";
 
 export default async function handler(req, res) {
   const { method, query, body } = req;
+
+  const supabase = createClient(req, res);
 
   switch (method) {
     case "GET":
@@ -54,7 +56,7 @@ export default async function handler(req, res) {
       }
       break;
     default:
-      res.setHeader("Allow", ["GET", "POST", "DELETE"]);
+      res.setHeader("Allow", ["GET", "POST", "PATCH", "DELETE"]);
       res.status(405).end(`Method ${method} Not Allowed`);
   }
 }

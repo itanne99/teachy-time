@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Navbar, Nav, Container, Dropdown, Button } from 'react-bootstrap';
 import { useRouter } from 'next/router';
-import supabase from '@/db/supabase';
+import supabase from '@/supabase/component';
 import ProfileDropdown from './ProfileDropdown';
 import { PersonCircle } from 'react-bootstrap-icons';
 

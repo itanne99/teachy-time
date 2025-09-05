@@ -3,7 +3,7 @@ import "bootswatch/dist/litera/bootstrap.min.css";
 import { Container } from "react-bootstrap";
 import { create } from "zustand";
 import { useEffect } from "react";
-import supabase from "@/db/supabase";
+import supabase from "@/supabase/component";
 
 const setInitialAlarms = () => {
   const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];

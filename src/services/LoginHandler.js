@@ -1,4 +1,4 @@
-import supabase from "@/db/supabase";
+import supabase from "@/supabase/component";
 
 /**
  * Handles the user login process, including setting the session and fetching initial data.
