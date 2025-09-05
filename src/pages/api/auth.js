@@ -8,14 +8,14 @@ export default async function handler(req, res) {
       try {
         const { data, error } = await supabase.auth.getSession();
         if (error) {
-          return res.status(500).json({ error: error.message });
+          throw error;
         }
         res.status(200).json(data);
       } catch (error) {
-        res.status(500).json({
-            error: "An unexpected error occurred.",
-            details: error.message,
-          });
+        res.status(error.status).json({
+          ...error,
+          message: error.message,
+        });
       }
       break;
     case "POST":
@@ -31,37 +31,25 @@ export default async function handler(req, res) {
         });
 
         if (signInResponse.error) {
-          return res.status(500).json({ error: error.message });
-        }
-
-        const setSessionResponse = await supabase.auth.setSession({
-          access_token: signInResponse.data.session.access_token,
-          refresh_token: signInResponse.data.session.refresh_token
-        });
-
-        if(setSessionResponse.error){
-          return res.status(500).json({ error: setSessionResponse.error.message });
+          throw signInResponse.error;
         }
 
         res.status(200).json(signInResponse.data);
       } catch (error) {
-        res.status(500).json({
-            error: "An unexpected error occurred.",
-            details: error.message,
-          });
+        res.status(error.status).json({...error, message: error.message});
       }
       break;
     case "DELETE":
       try {
         const { error } = await supabase.auth.signOut();
         if (error) {
-          return res.status(500).json({ error: error.message });
+          throw error;
         }
         res.status(200).end(); // Sign-out successful, no content to return
       } catch (error) {
-        res.status(500).json({
-            error: "An unexpected error occurred.",
-            details: error.message,
+        res.status(error.status).json({
+            ...error,
+            message: error.message,
           });
       }
       break;
