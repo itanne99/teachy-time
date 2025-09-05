@@ -1,8 +1,24 @@
 import React from 'react';
+import { Container, Row, Col } from 'react-bootstrap';
 
 // The main application component for Teachy Time
 export default function App() {
   return(
-    <h1>Index Page</h1>
+    <Container className="py-5">
+      <Row className="justify-content-center">
+        <Col md={8} className="text-center">
+          <h1 className="display-4 mb-4">Welcome to Teachy Time!</h1>
+          <p className="lead">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+          </p>
+          <p>
+            Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+          </p>
+          <p>
+            Curabitur pretium tincidunt lacus. Nulla gravida orci a odio. Nullam varius, turpis et commodo pharetra, est eros bibendum elit, nec luctus magna felis sollicitudin mauris. Integer in mauris eu nibh euismod gravida.
+          </p>
+        </Col>
+      </Row>
+    </Container>
   );
 }
