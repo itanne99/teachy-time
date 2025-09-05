@@ -4,6 +4,16 @@ import supabaseService from "@/db/supabaseService";
 export default async function handler(req, res) {
   const { method, query, body } = req;
 
+  const daysOfWeekMap = {
+    0: 'Sunday',
+    1: 'Monday',
+    2: 'Tuesday',
+    3: 'Wednesday',
+    4: 'Thursday',
+    5: 'Friday',
+    6: 'Saturday',
+  };
+
   // Helper function to check for existing alarms
   const checkExistingAlarm = async (alarmIdentifier, user_id) => {
     let queryBuilder = supabase.from('alarms').select('*');
@@ -26,7 +36,7 @@ export default async function handler(req, res) {
     case 'POST': // Or POST for fetching with a body
       // Fetch alarms, optionally filtered by day
       try {
-        const { day_of_week, user_id } = body;
+        const { user_id } = body;
 
         // If no user_id provided, return error
         if (!user_id) {
@@ -35,12 +45,29 @@ export default async function handler(req, res) {
 
         let queryBuilder = supabase.from('alarms').select('*');
 
-        // The user wants all params in the body, even for fetching.
-        if (body?.day) {
-          queryBuilder = queryBuilder.eq('day_of_week', day_of_week).eq('user_id', user_id);
-        }
+        queryBuilder = queryBuilder.eq('user_id', user_id);
 
         const { data, error } = await queryBuilder.order('time', { ascending: true });
+
+        if (data) {
+          const transformedData = {
+            'Sunday': [],
+            'Monday': [],
+            'Tuesday': [],
+            'Wednesday': [],
+            'Thursday': [],
+            'Friday': [],
+            'Saturday': [],
+          };
+
+          data.forEach(alarm => {
+            const dayName = daysOfWeekMap[alarm.day_of_week];
+            if (dayName) {
+              transformedData[dayName].push(alarm);
+            }
+          });
+          return res.status(200).json(transformedData);
+        }
 
         if (error) {
           console.error('Supabase error:', error);
