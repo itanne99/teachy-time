@@ -12,7 +12,10 @@ export const AlterAlarm = ({ show, onHide, onSave, alarm, day, validationError }
     setCurrentAlarm(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
+  const handleSave = (e) => {
+    if(e){
+      e.preventDefault();
+    }
     onSave(currentAlarm);
   };
 
@@ -23,7 +26,7 @@ export const AlterAlarm = ({ show, onHide, onSave, alarm, day, validationError }
       </Modal.Header>
       <Modal.Body>
         {validationError && <Alert variant="danger">{validationError}</Alert>}
-        <Form>
+        <Form onSubmit={ (e) => {handleSave(e);} }>
           <Form.Group className="mb-3" controlId="formAlarmTime">
             <Form.Label>Time</Form.Label>
             <Form.Control
