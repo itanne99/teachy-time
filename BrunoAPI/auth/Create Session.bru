@@ -1,0 +1,28 @@
+meta {
+  name: Create Session
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{BaseUrl}}/auth
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "user_email": "teachy-tech@mailinator.com",
+    "password": "tester123"
+  }
+}
+
+script:post-response {
+  const response = res.getBody();
+  if (response && response.user.id) {
+    bru.setEnvVar('user_id', response.user.id);
+    console.log('User ID saved:', response.user.id);
+  } else {
+    console.log('User ID not found in response.');
+  }
+}

@@ -1,0 +1,20 @@
+meta {
+  name: Create Alarm
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{BaseUrl}}/alarms
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "day_of_week": "", 
+    "time": "", 
+    "label": "", 
+    "user_id": "{{user_id}}"
+  }
+}
