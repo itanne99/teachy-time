@@ -50,7 +50,7 @@ export const NavBar = ({ useStore }) => {
             <PersonCircle size={24} />
           </Dropdown.Toggle>
           <Dropdown.Menu align="end">
-            <Dropdown.Item as={Link} href="/profile">Profile</Dropdown.Item>
+            <Dropdown.Item as={Link} href="/Profile">Profile</Dropdown.Item>
             <Dropdown.Divider />
             <Dropdown.Item as={Button} onClick={handleLogout}>Logout</Dropdown.Item>
           </Dropdown.Menu>
