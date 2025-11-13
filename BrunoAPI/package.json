@@ -1,0 +1,10 @@
+{
+  "name": "BrunoAPI",
+  "version": "1.0.0",
+  "main": "bruno.json",
+  "license": "MIT",
+  "type": "module",
+  "devDependencies": {
+    "@faker-js/faker": "^10.1.0"
+  }
+}
