@@ -3,10 +3,10 @@ import { ProgressBar } from "react-bootstrap";
 import CommonUtils from "@/services/CommonUtils";
 
 function UpcomingAlarmBar({ alarms }) {
+  const [currentAlarm, setCurrentAlarm] = useState(null);
   const [nextAlarm, setNextAlarm] = useState(null);
-  const [prevAlarm, setPrevAlarm] = useState(null);
   const [timeLeft, setTimeLeft] = useState(0); // in seconds
-
+  const [currentAlarmLabel, setCurrentAlarmLabel] = useState("No alarms for today");
   const [progressSuccess, setProgressSuccess] = useState(0);
   const [progressWarning, setProgressWarning] = useState(0);
   const [progressDanger, setProgressDanger] = useState(0);
@@ -16,39 +16,48 @@ function UpcomingAlarmBar({ alarms }) {
       const now = new Date();
       const sortedAlarms = [...alarms].sort((a, b) => a.time.localeCompare(b.time));
 
-      let upcoming = null;
-      let previous = null;
-
-      for (const alarm of sortedAlarms) {
+      const upcomingAlarms = sortedAlarms.filter(alarm => {
         const [alarmHour, alarmMinute] = alarm.time.split(":").map(Number);
         const alarmTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), alarmHour, alarmMinute, 0);
+        return alarmTime > now;
+      });
 
-        if (alarmTime > now) {
-          if (!upcoming) {
-            upcoming = alarm;
-          }
+      const firstUpcoming = upcomingAlarms[0] || null;
+      const secondUpcoming = upcomingAlarms[1] || null;
+
+      setCurrentAlarm(firstUpcoming);
+      setNextAlarm(secondUpcoming);
+
+      // Update the main label
+      if (firstUpcoming) {
+        // Find the alarm that just passed to set the label
+        const passedAlarms = sortedAlarms.filter(alarm => {
+          const [alarmHour, alarmMinute] = alarm.time.split(":").map(Number);
+          const alarmTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), alarmHour, alarmMinute, 0);
+          return alarmTime <= now;
+        });
+        // The label should be the last alarm that passed
+        const lastPassed = passedAlarms[passedAlarms.length - 1];
+        if (lastPassed) {
+          setCurrentAlarmLabel(lastPassed.label);
         } else {
-          previous = alarm;
+          // If no alarm has passed, we are before the first alarm of the day
+          setCurrentAlarmLabel("First alarm of the day");
         }
-      }
-
-      if (upcoming) {
-        setNextAlarm(upcoming);
-        setPrevAlarm(previous);
       } else {
-        setNextAlarm(null);
-        setPrevAlarm(previous); // Keep the last alarm of the day
+        // After the last alarm has passed
+        const lastAlarmOfDay = sortedAlarms[sortedAlarms.length - 1];
+        setCurrentAlarmLabel(lastAlarmOfDay ? lastAlarmOfDay.label : "No alarms for today");
       }
     };
 
     findNextAlarm(); // Initial call
-
     const interval = setInterval(findNextAlarm, 60 * 1000); // Check for next alarm every minute
     return () => clearInterval(interval);
   }, [alarms]);
 
   useEffect(() => {
-    if (!nextAlarm) {
+    if (!currentAlarm) {
       setProgressSuccess(0); // Bar is full when no next alarm
       setProgressWarning(0);
       setProgressDanger(0);
@@ -57,8 +66,8 @@ function UpcomingAlarmBar({ alarms }) {
 
     const updateCountdown = () => {
       const now = new Date();
-      const [alarmHour, alarmMinute] = nextAlarm.time.split(":").map(Number);
-      const alarmTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), alarmHour, alarmMinute, 0);
+      const [currentHour, currentMinute] = currentAlarm.time.split(":").map(Number);
+      const alarmTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), currentHour, currentMinute, 0);
 
       const totalSeconds = (alarmTime - now) / 1000;
       if (totalSeconds <= 0) {
@@ -69,14 +78,18 @@ function UpcomingAlarmBar({ alarms }) {
 
       // Calculate progress
       const prevAlarmTime = (() => {
-        if (!prevAlarm) {
-          // If no previous alarm, consider the start of the day (00:00) as the reference
-          const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-          return startOfDay.getTime(); // Get timestamp
+        const sortedAlarms = [...alarms].sort((a, b) => a.time.localeCompare(b.time));
+        const passedAlarms = sortedAlarms.filter(alarm => {
+          const [h, m] = alarm.time.split(':').map(Number);
+          const t = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0);
+          return t <= now;
+        });
+        const lastPassed = passedAlarms[passedAlarms.length - 1];
+        if (lastPassed) {
+          const [h, m] = lastPassed.time.split(':').map(Number);
+          return new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0).getTime();
         }
-        const [prevHour, prevMinute] = prevAlarm.time.split(":").map(Number);
-        const prev = new Date(now.getFullYear(), now.getMonth(), now.getDate(), prevHour, prevMinute, 0);
-        return prev.getTime(); // Get timestamp
+        return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).getTime(); // Start of day
       })();
 
       const totalDuration = (alarmTime.getTime() - prevAlarmTime) / 1000;
@@ -108,7 +121,7 @@ function UpcomingAlarmBar({ alarms }) {
     updateCountdown(); // Initial call
     const interval = setInterval(updateCountdown, 1000); // Update every second
     return () => clearInterval(interval);
-  }, [nextAlarm, prevAlarm]);
+  }, [currentAlarm, alarms]);
 
   const formatTimeLeft = (seconds) => {
     if (seconds <= 0) return "00:00:00";
@@ -126,22 +139,21 @@ function UpcomingAlarmBar({ alarms }) {
 
   return (
     <div className="upcoming-alarm-bar text-center p-3 bg-light" style={{ width: "100%" }}>
-      <h1>{prevAlarm ? `${prevAlarm.label}` : "First alarm of the day"}</h1>
+      <h1>{currentAlarm?.label}</h1>
       <ProgressBar style={{ height: "4rem", transform: "rotate(180deg)" }}>
         <ProgressBar animated variant="danger" now={progressDanger} key={1} />
         <ProgressBar animated variant="warning" now={progressWarning} key={2} />
         <ProgressBar animated variant="success" now={progressSuccess} key={3} />
         <ProgressBar now={100 - (progressSuccess + progressWarning + progressDanger)} variant="secondary" key={4} />
       </ProgressBar>
-
       <div className="mt-4">
-        {nextAlarm ? (
+        {currentAlarm ? (
           <>
-            <h4>Next: {nextAlarm.label}</h4>
+            <h4>{nextAlarm ? `Next: ${nextAlarm.label}` : "Final Alarm!"}</h4>
             <h2>{formatTimeLeft(timeLeft)}</h2>
           </>
         ) : (
-          <h4>No more alarms for today!</h4>
+          <h4>Final Alarm!</h4>
         )}
       </div>
     </div>
