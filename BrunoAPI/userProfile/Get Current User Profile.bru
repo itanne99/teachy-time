@@ -1,0 +1,20 @@
+meta {
+  name: Get Current User Profile
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{BaseUrl}}/userProfile
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~user_id: 30b4e55e-9de7-40a2-9978-adeed38c40fe
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
