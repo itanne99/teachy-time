@@ -155,6 +155,13 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: 'No update data provided.' });
         }
 
+        // Check for conflict: if time or day_of_week is being updated, ensure no existing alarm at the new time/day
+        if (time !== alarmToUpdate.time || label !== alarmToUpdate.label) {
+          const { data: conflictingAlarm, error: conflictError } = await checkExistingAlarm({ day_of_week: alarmToUpdate.day_of_week, time }, alarmToUpdate.user_id);
+          if (conflictingAlarm && conflictingAlarm.id !== id) {
+            return res.status(409).json({ error: 'An alarm at this time already exists for this user on this day.' });
+          }
+        }
         const { data, error } = await supabase
           .from('alarms')
           .update({ time: time, label: label })

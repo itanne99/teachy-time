@@ -3,20 +3,23 @@ import { Modal, Button, Form, Alert } from 'react-bootstrap';
 
 export const AlterAlarm = ({ show, onHide, onSave, alarm, day, validationError }) => {
   const [currentAlarm, setCurrentAlarm] = useState(alarm);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     setCurrentAlarm(alarm);
   }, [alarm]);
 
   const handleChange = (field, value) => {
-    setCurrentAlarm(prev => ({ ...prev, [field]: value }));
+    setCurrentAlarm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = (e) => {
-    if(e){
+  const handleSave = async (e) => {
+    if (e) {
       e.preventDefault();
     }
-    onSave(currentAlarm);
+    setIsLoading(true);
+    await onSave(currentAlarm);
+    setIsLoading(false);
   };
 
   return (
@@ -50,8 +53,8 @@ export const AlterAlarm = ({ show, onHide, onSave, alarm, day, validationError }
         <Button variant="secondary" onClick={onHide}>
           Close
         </Button>
-        <Button variant="primary" onClick={handleSave}>
-          Save Changes
+        <Button variant="primary" onClick={handleSave} disabled={isLoading}>
+          {isLoading ? 'Saving...' : 'Save Changes'}
         </Button>
       </Modal.Footer>
     </Modal>

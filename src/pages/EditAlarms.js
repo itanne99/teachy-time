@@ -125,6 +125,7 @@ export default function EditAlarms({ useStore }) {
             [activeDay]: [...alarms[activeDay], data],
           });
         }
+        table.setSorting([{ id: "time", desc: false }]);
         setShowModal(false);
         setEditingAlarm(null);
       } else {
