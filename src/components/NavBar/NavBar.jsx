@@ -1,35 +1,18 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import Link from 'next/link'
 import { Navbar, Nav, Container, Dropdown, Button } from 'react-bootstrap';
 import { useRouter } from 'next/router';
 import supabase from '@/supabase/component';
-import ProfileDropdown from './ProfileDropdown';
 import { PersonCircle } from 'react-bootstrap-icons';
 
 export const NavBar = ({ useStore }) => {
   const router = useRouter();
   const currentPath = router.asPath;
-  const [session, setSession] = useState(null);
+  const session = useStore((state) => state.session);
 
   useEffect(() => {
     console.log(`Current path:`, currentPath);
   }, [currentPath]);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-    };
-    checkAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
 
   const pages = [
     { name: 'Home', path: '/', type: 'link' },
@@ -57,7 +40,7 @@ export const NavBar = ({ useStore }) => {
         </Dropdown>
       );
     } else {
-      return <ProfileDropdown useStore={useStore} />;
+      return <Nav.Link as={Link} href="/login">Login</Nav.Link>;
     }
   }
 
