@@ -4,6 +4,7 @@ import { Container } from "react-bootstrap";
 import { useEffect } from "react";
 import supabase from "@/supabase/component";
 import { useStore } from "@/services/useStore";
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export default function App({ Component, pageProps }) {
   const setAlarms = useStore((state) => state.setAlarms);
@@ -69,5 +70,6 @@ export default function App({ Component, pageProps }) {
   <Container fluid className="p-0 bg-light d-flex flex-column" style={{ minHeight: "100vh" }}>
     <NavBar useStore={useStore} />
     <Component {...pageProps} useStore={useStore} />
+    <SpeedInsights/>
   </Container>);
 }
