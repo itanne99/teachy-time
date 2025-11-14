@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Navbar, Nav, Container, Dropdown, Button } from 'react-bootstrap';
 import { useRouter } from 'next/router';
 import supabase from '@/supabase/component';
+import ProfileDropdown from './ProfileDropdown';
 import { PersonCircle } from 'react-bootstrap-icons';
 
 export const NavBar = ({ useStore }) => {
@@ -40,7 +41,7 @@ export const NavBar = ({ useStore }) => {
         </Dropdown>
       );
     } else {
-      return <Nav.Link as={Link} href="/login">Login</Nav.Link>;
+      return <ProfileDropdown useStore={useStore} />;
     }
   }
 
