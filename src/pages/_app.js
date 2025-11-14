@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import supabase from "@/supabase/component";
 import { useStore } from "@/services/useStore";
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import { Analytics } from "@vercel/analytics/next"
 
 export default function App({ Component, pageProps }) {
   const setAlarms = useStore((state) => state.setAlarms);
@@ -71,5 +72,6 @@ export default function App({ Component, pageProps }) {
     <NavBar useStore={useStore} />
     <Component {...pageProps} useStore={useStore} />
     <SpeedInsights/>
+    <Analytics/>
   </Container>);
 }
