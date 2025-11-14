@@ -27,18 +27,18 @@ function UpcomingAlarmList({alarms}) {
   }, [alarms]);
 
   return (
-    <Card style={{ width: '100%' }}>
-      <Col lg={12} className="text-center">
+    <Card style={{ width: '100%', height: '50vh' }}>
+      <Card.Header className="text-center bg-primary text-white">
         <h4>Upcoming Alarms</h4>
-      </Col>
-      <Stack direction="vertical" gap={3}>
+      </Card.Header>
+      <Stack direction="vertical" gap={0} style={{ overflowY: 'auto', height: '100%' }} className='p-5 align-items-center'>
         {filteredAlarms.length === 0 ? (
           <Card.Body className="text-center">
             <p>No upcoming alarms.</p>
           </Card.Body>
         ) : (
             filteredAlarms.map((alarm) => (
-              <Card.Body key={alarm.id} className="d-flex justify-content-between align-items-center">
+              <Card.Body key={alarm.id} style={{width: '50%', height: '25%'}} className=" d-flex flex-column align-items-center justify-content-center rounded bg-primary bg-opacity-10 border-bottom">
                 <div className='text-center' style={{ width: '100%' }}>
                   <strong>{CommonUtils.formatTime(alarm.time)}</strong> 
                   <br />

@@ -6,6 +6,7 @@ function UpcomingAlarmBar({ alarms }) {
   const [currentAlarm, setCurrentAlarm] = useState(null);
   const [nextAlarm, setNextAlarm] = useState(null);
   const [timeLeft, setTimeLeft] = useState(0); // in seconds
+  const [initialTotalDuration, setInitialTotalDuration] = useState(0); // in seconds
   const [currentAlarmLabel, setCurrentAlarmLabel] = useState("No alarms for today");
   const [progressSuccess, setProgressSuccess] = useState(0);
   const [progressWarning, setProgressWarning] = useState(0);
@@ -57,8 +58,22 @@ function UpcomingAlarmBar({ alarms }) {
   }, [alarms]);
 
   useEffect(() => {
+    if (currentAlarm) {
+      const now = new Date();
+      const [currentHour, currentMinute] = currentAlarm.time.split(":").map(Number);
+      const alarmTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), currentHour, currentMinute, 0);
+      const totalSeconds = (alarmTime - now) / 1000;
+
+      if (totalSeconds > 0) {
+        setInitialTotalDuration(totalSeconds);
+      }
+    }
+  }, [currentAlarm]);
+
+  useEffect(() => {
     if (!currentAlarm) {
       setProgressSuccess(0); // Bar is full when no next alarm
+      setInitialTotalDuration(0);
       setProgressWarning(0);
       setProgressDanger(0);
       return;
@@ -72,56 +87,39 @@ function UpcomingAlarmBar({ alarms }) {
       const totalSeconds = (alarmTime - now) / 1000;
       if (totalSeconds <= 0) {
         setTimeLeft(0);
-        // The other useEffect will find the next alarm shortly
+        return; // The other useEffect will find the next alarm shortly
       }
       setTimeLeft(totalSeconds);
 
-      // Calculate progress
-      const prevAlarmTime = (() => {
-        const sortedAlarms = [...alarms].sort((a, b) => a.time.localeCompare(b.time));
-        const passedAlarms = sortedAlarms.filter(alarm => {
-          const [h, m] = alarm.time.split(':').map(Number);
-          const t = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0);
-          return t <= now;
-        });
-        const lastPassed = passedAlarms[passedAlarms.length - 1];
-        if (lastPassed) {
-          const [h, m] = lastPassed.time.split(':').map(Number);
-          return new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0).getTime();
-        }
-        return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).getTime(); // Start of day
-      })();
-
-      const totalDuration = (alarmTime.getTime() - prevAlarmTime) / 1000;
-      const elapsed = (now.getTime() - prevAlarmTime) / 1000;
-
-      if (totalDuration > 0) {
-        const overallProgress = Math.max(0, 100 - (elapsed / totalDuration) * 100);
-
-        if (totalSeconds <= 60) { // Less than 1 minute
-          setProgressSuccess(0);
-          setProgressWarning(0);
-          // Scale the progress from 5% down to 0 over 60 seconds
-          setProgressDanger((totalSeconds / 60) * 5);
-        } else if (totalSeconds <= 300) { // Less than 5 minutes
-          setProgressSuccess(0);
-          // Scale the progress from 10% down to 0 over the 240s warning phase
-          setProgressWarning(((totalSeconds - 60) / 240) * 10);
-          setProgressDanger(5);
-        } else {
-          setProgressSuccess(overallProgress);
-          setProgressWarning(10);
-          setProgressDanger(5);
-        }
+      if (totalSeconds <= 60) {
+        // Less than 1 minute
+        setProgressSuccess(0);
+        setProgressWarning(0);
+        // Scale the progress from 5% down to 0 over 60 seconds
+        setProgressDanger((totalSeconds / 60) * 5);
+      } else if (totalSeconds <= 300) {
+        // Less than 5 minutes
+        setProgressSuccess(0);
+        // Scale the progress from 10% down to 0 over the 240s warning phase
+        setProgressWarning(((totalSeconds - 60) / 240) * 10);
+        setProgressDanger(5);
       } else {
-        setProgressSuccess(100);
+        // More than 5 minutes
+        if (initialTotalDuration > 0) {
+          const successProgress = ((totalSeconds - 300) / (initialTotalDuration - 300)) * (100 - 15);
+          setProgressSuccess(successProgress);
+        } else {
+          setProgressSuccess(100 - 15);
+        }
+        setProgressWarning(10);
+        setProgressDanger(5);
       }
     };
 
     updateCountdown(); // Initial call
     const interval = setInterval(updateCountdown, 1000); // Update every second
     return () => clearInterval(interval);
-  }, [currentAlarm, alarms]);
+  }, [currentAlarm, initialTotalDuration]);
 
   const formatTimeLeft = (seconds) => {
     if (seconds <= 0) return "00:00:00";

@@ -6,14 +6,13 @@ import UpcomingAlarmBar from "@/components/UpcomingAlarm/UpcomingAlarmBar";
 
 function ViewAlarms({ useStore }) {
   const alarms = useStore((state) => state.alarms);
-  console.log('CommonUtils.getCurrentDay():', CommonUtils.getCurrentDay());
-  console.log('All alarms:', alarms);
+  const todaysAlarms = alarms[CommonUtils.getCurrentDay()] || [];
 
 
   return (
     <Container className="d-flex flex-column flex-grow-1 align-items-center justify-content-center">
-      <UpcomingAlarmBar alarms={alarms[CommonUtils.getCurrentDay()]} />
-      <UpcomingAlarmList alarms={alarms[CommonUtils.getCurrentDay()]} />
+      <UpcomingAlarmBar alarms={todaysAlarms} />
+      <UpcomingAlarmList alarms={todaysAlarms} />
     </Container>
   );
 }
