@@ -1,0 +1,21 @@
+meta {
+  name: Go To Token Req
+  type: http
+  seq: 3
+}
+
+get {
+  url: https://mgsqrwnwppjmijenbfys.supabase.co/auth/v1/verify?token=pkce_64434b2f8640437d444a03132d4421692cf9631586b8734f892d4b69&type=recovery&redirect_to=http://localhost:3000/auth/update-password
+  body: none
+  auth: inherit
+}
+
+params:query {
+  token: pkce_64434b2f8640437d444a03132d4421692cf9631586b8734f892d4b69
+  type: recovery
+  redirect_to: http://localhost:3000/auth/update-password
+}
+
+settings {
+  encodeUrl: true
+}

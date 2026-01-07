@@ -1,6 +1,7 @@
 import React, { useState, forwardRef } from 'react';
 import { Dropdown, Form, Button, Alert } from 'react-bootstrap';
 import { LoginHandler } from '@/services/LoginHandler';
+import supabase from '@/supabase/component';
 
 // Custom Toggle to remove the dropdown arrow
 const CustomToggle = forwardRef(({ children, onClick }, ref) => (
@@ -29,6 +30,35 @@ function ProfileDropdown({ useStore }) {
     await loginHandler.login(email, password);
   };
 
+  const sendPasswordResetEmail = async (e) => {
+    e.preventDefault();
+    if (!email) {
+      setError('Please enter your email address to reset your password.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/auth/passwordRecovery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to send password reset email.');
+      }
+      setError('');
+      alert('Password reset email sent! Please check your inbox.');
+    } catch (err) {
+      setError(err.message || 'An unexpected error occurred.');
+    }
+    setIsLoading(false);
+  };
+
+
   return (
     <Dropdown>
       <Dropdown.Toggle as={CustomToggle} id="dropdown-custom-components">
@@ -47,6 +77,13 @@ function ProfileDropdown({ useStore }) {
             <Form.Label>Password</Form.Label>
             <Form.Control type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
           </Form.Group>
+
+          <Form.Group className="mb-3 text-end">
+            <Button variant="link" onClick={sendPasswordResetEmail} disabled={isLoading} style={{ padding: 0 }}>
+              Forgot Password?
+            </Button>
+          </Form.Group>
+
           <div className="d-grid">
             <Button variant="secondary" type="submit" disabled={isLoading}>
               {isLoading ? 'Logging in...' : 'Login'}

@@ -15,7 +15,7 @@ export class LoginHandler {
   }
 
   async #authenticateUser(email, password) {
-    const authResponse = await fetch("/api/auth", {
+    const authResponse = await fetch("/api/auth/user", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ user_email: email, password: password }),
