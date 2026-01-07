@@ -21,11 +21,10 @@ export default async function handler(req, res) {
         let redirectToUrl;
         if (process.env.VERCEL_TARGET_ENV === 'production') {
           redirectToUrl = `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}/Profile?reset=true`;
-        } else if (process.env.VERCEL_TARGET_ENV === 'preview' || process.env.VERCEL_TARGET_ENV === 'development') {
-          redirectToUrl = `https://${process.env.VERCEL_URL}/Profile?reset=true`;
         } else {
-          redirectToUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/Profile?reset=true`;
+          redirectToUrl = `https://${process.env.VERCEL_URL}/Profile?reset=true`;
         }
+
         const { data, error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: redirectToUrl });
 
         if (error) {
