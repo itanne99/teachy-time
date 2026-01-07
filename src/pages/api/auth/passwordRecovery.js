@@ -18,9 +18,15 @@ export default async function handler(req, res) {
         // This should be a client-side route where they can enter a new password.
         // Supabase will append access_token and refresh_token to this URL.
         // Ensure NEXT_PUBLIC_BASE_URL is set in your environment variables (e.g., .env.local).
-        const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/Profile?reset=true`, // Example client-side route
-        });
+        let redirectToUrl;
+        if (process.env.VERCEL_TARGET_ENV === 'production') {
+          redirectToUrl = `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}/Profile?reset=true`;
+        } else if (process.env.VERCEL_TARGET_ENV === 'preview' || process.env.VERCEL_TARGET_ENV === 'development') {
+          redirectToUrl = `https://${process.env.VERCEL_URL}/Profile?reset=true`;
+        } else {
+          redirectToUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/Profile?reset=true`;
+        }
+        const { data, error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: redirectToUrl });
 
         if (error) {
           throw error;
