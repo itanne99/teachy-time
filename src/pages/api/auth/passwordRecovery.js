@@ -5,6 +5,19 @@ export default async function handler(req, res) {
 
   const supabase = createClient(req, res);
 
+  const getURL = () => {
+    let url =
+      process?.env?.NEXT_PUBLIC_SITE_URL ?? // Set this to your site URL in production env.
+      process?.env?.NEXT_PUBLIC_VERCEL_URL ?? // Automatically set by Vercel.
+      'http://localhost:3000/'
+
+    // Make sure to include `https://` when not localhost.
+    url = url.startsWith('http') ? url : `https://${url}`
+    // Make sure to include a trailing `/`.
+    url = url.endsWith('/') ? url : `${url}/`
+    return url
+  }
+
   switch (method) {
     case "POST": // Request password reset email
       try {
@@ -14,18 +27,7 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: "Missing required field: email." });
         }
 
-        // The redirectTo URL is where the user will be sent after clicking the link in the email.
-        // This should be a client-side route where they can enter a new password.
-        // Supabase will append access_token and refresh_token to this URL.
-        // Ensure NEXT_PUBLIC_BASE_URL is set in your environment variables (e.g., .env.local).
-        let redirectToUrl;
-        if (process.env.VERCEL_TARGET_ENV === 'production') {
-          redirectToUrl = `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}/Profile?reset=true`;
-        } else {
-          redirectToUrl = `https://${process.env.VERCEL_URL}/Profile?reset=true`;
-        }
-
-        const { data, error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: redirectToUrl });
+        const { data, error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: getURL() + 'Profile?reset=true' });
 
         if (error) {
           throw error;
