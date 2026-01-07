@@ -15,4 +15,6 @@ export const useStore = create((set) => ({
   setUser: (user) => set({ user }),
   session: null,
   setSession: (session) => set({ session }),
+  passwordResetFlag: null,
+  setPasswordResetFlag: (flag) => set({ passwordResetFlag: flag }),
 }));

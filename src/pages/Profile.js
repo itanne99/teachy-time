@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { Container, Form, Button, Alert, Card, Row, Col } from "react-bootstrap";
 import supabase from "@/supabase/component";
+import { useRouter } from "next/router";
+import { useStore } from "@/services/useStore";
+import { UpdatePasswordModal } from "@/components/models/UpdatePassword"; // Import UpdatePasswordModal
 
 const getUserProfileAndSession = async () => {
   const {
@@ -13,6 +16,7 @@ const getUserProfileAndSession = async () => {
 };
 
 export default function Profile() {
+  const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [user, setUser] = useState(null);
   const [session, setSession] = useState(null);
@@ -25,6 +29,10 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
+
+  // Get password reset state and setter from global store
+  const passwordResetFlag = useStore((state) => state.passwordResetFlag);
+  const setPasswordResetFlag = useStore((state) => state.setPasswordResetFlag);
 
   useEffect(() => {
     const fetchSessionAndUser = async () => {
@@ -42,6 +50,28 @@ export default function Profile() {
       }
     });
   }, []);
+
+  // useEffect to check for 'reset=True' query parameter and set the flag
+  useEffect(() => {
+    if (router.isReady) {
+      const { reset } = router.query;
+      console.log('reset:',reset)
+      if (reset != undefined && (reset === 'true' || reset === 'True')) {
+        setPasswordResetFlag(true);
+        // setForcedPasswordReset(true); // Removed: setForcedPasswordReset call
+      }
+    }
+  }, [router.isReady, router.query.reset, router, setPasswordResetFlag]); // Added setPasswordResetFlag to dependencies
+
+  // New useEffect to clear the 'reset' query parameter when the modal is closed
+  useEffect(() => {
+    // This useEffect now only clears the query param if passwordResetFlag is false AND the param exists.
+    // It no longer depends on 'forcedPasswordReset'.
+    if (router.isReady && !passwordResetFlag && router.query.reset) {
+      console.log("Router Reset!!")
+      router.replace(router.pathname, undefined, { shallow: true });
+    }
+  }, [passwordResetFlag, router.isReady, router.query.reset, router]);
 
   const fetchUserProfile = async (userId) => {
     setLoading(true);
@@ -186,18 +216,23 @@ export default function Profile() {
             </Form.Group>
 
             {isEditing && (
-              <div>
+              <Col className="d-flex">
                 <Button variant="primary" type="submit" disabled={loading} className="me-2">
                   {loading ? "Saving..." : "Save"}
                 </Button>
                 <Button variant="light" onClick={handleCancel} disabled={loading}>
                   Cancel
                 </Button>
-              </div>
+                <Button variant="warning" className="ms-auto" onClick={() => { setPasswordResetFlag(true); }} disabled={loading}>
+                  Reset Password
+                </Button>
+              </Col>
             )}
           </Form>
         </Card.Body>
       </Card>
+      
+      <UpdatePasswordModal />
     </Container>
   );
 }
