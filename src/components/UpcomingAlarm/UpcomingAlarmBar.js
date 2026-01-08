@@ -79,15 +79,17 @@ function UpcomingAlarmBar({ alarms }) {
       return;
     }
 
+    let rafId;
     const updateCountdown = () => {
-      const now = new Date();
+      const nowMs = Date.now();
       const [currentHour, currentMinute] = currentAlarm.time.split(":").map(Number);
-      const alarmTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), currentHour, currentMinute, 0);
-
-      const totalSeconds = (alarmTime - now) / 1000;
+      const alarmTime = new Date();
+      alarmTime.setHours(currentHour, currentMinute, 0, 0);
+      const totalSeconds = (alarmTime.getTime() - nowMs) / 1000; // fractional seconds
       if (totalSeconds <= 0) {
         setTimeLeft(0);
-        return; // The other useEffect will find the next alarm shortly
+        // let the outer effect that finds next alarm handle advancing
+        return;
       }
       setTimeLeft(totalSeconds);
 
@@ -112,15 +114,20 @@ function UpcomingAlarmBar({ alarms }) {
         danger = percentRemaining;
       }
 
-      // Ensure segments are numbers and sum to <=100; remainder fills secondary
       setProgressSuccess(success);
       setProgressWarning(warning);
       setProgressDanger(danger);
+
+      // schedule next frame
+      rafId = requestAnimationFrame(updateCountdown);
     };
 
-    updateCountdown(); // Initial call
-    const interval = setInterval(updateCountdown, 1000); // Update every second
-    return () => clearInterval(interval);
+    // kick off loop
+    rafId = requestAnimationFrame(updateCountdown);
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+    };
   }, [currentAlarm, initialTotalDuration]);
 
   const formatTimeLeft = (seconds) => {
@@ -149,7 +156,7 @@ function UpcomingAlarmBar({ alarms }) {
       <div className="mt-4">
         {currentAlarm ? (
           <>
-            <h4>{nextAlarm ? `Next: ${nextAlarm.label}` : "Final Alarm!"}</h4>
+            <h4>{nextAlarm ? `Coming Up: ${nextAlarm.label}` : "Final Alarm!"}</h4>
             <h2>{formatTimeLeft(timeLeft)}</h2>
           </>
         ) : (
