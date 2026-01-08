@@ -79,46 +79,55 @@ function UpcomingAlarmBar({ alarms }) {
       return;
     }
 
+    let rafId;
     const updateCountdown = () => {
-      const now = new Date();
+      const nowMs = Date.now();
       const [currentHour, currentMinute] = currentAlarm.time.split(":").map(Number);
-      const alarmTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), currentHour, currentMinute, 0);
-
-      const totalSeconds = (alarmTime - now) / 1000;
+      const alarmTime = new Date();
+      alarmTime.setHours(currentHour, currentMinute, 0, 0);
+      const totalSeconds = (alarmTime.getTime() - nowMs) / 1000; // fractional seconds
       if (totalSeconds <= 0) {
         setTimeLeft(0);
-        return; // The other useEffect will find the next alarm shortly
+        // let the outer effect that finds next alarm handle advancing
+        return;
       }
       setTimeLeft(totalSeconds);
 
-      if (totalSeconds <= 60) {
-        // Less than 1 minute
-        setProgressSuccess(0);
-        setProgressWarning(0);
-        // Scale the progress from 5% down to 0 over 60 seconds
-        setProgressDanger((totalSeconds / 60) * 5);
-      } else if (totalSeconds <= 300) {
-        // Less than 5 minutes
-        setProgressSuccess(0);
-        // Scale the progress from 10% down to 0 over the 240s warning phase
-        setProgressWarning(((totalSeconds - 60) / 240) * 10);
-        setProgressDanger(5);
-      } else {
-        // More than 5 minutes
-        if (initialTotalDuration > 0) {
-          const successProgress = ((totalSeconds - 300) / (initialTotalDuration - 300)) * (100 - 15);
-          setProgressSuccess(successProgress);
-        } else {
-          setProgressSuccess(100 - 15);
-        }
-        setProgressWarning(10);
-        setProgressDanger(5);
+      // percent remaining relative to when the alarm was first detected
+      let percentRemaining = 100;
+      if (initialTotalDuration > 0) {
+        percentRemaining = Math.max(0, Math.min(100, (totalSeconds / initialTotalDuration) * 100));
       }
+
+      // Reset all segments first
+      let success = 0, warning = 0, danger = 0;
+
+      // Choose color based on thresholds:
+      // > 5 minutes => green (success)
+      // <= 5 minutes and > 1 minute => yellow (warning)
+      // <= 1 minute => red (danger)
+      if (totalSeconds > 300) {
+        success = percentRemaining;
+      } else if (totalSeconds > 60) {
+        warning = percentRemaining;
+      } else {
+        danger = percentRemaining;
+      }
+
+      setProgressSuccess(success);
+      setProgressWarning(warning);
+      setProgressDanger(danger);
+
+      // schedule next frame
+      rafId = requestAnimationFrame(updateCountdown);
     };
 
-    updateCountdown(); // Initial call
-    const interval = setInterval(updateCountdown, 1000); // Update every second
-    return () => clearInterval(interval);
+    // kick off loop
+    rafId = requestAnimationFrame(updateCountdown);
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+    };
   }, [currentAlarm, initialTotalDuration]);
 
   const formatTimeLeft = (seconds) => {
@@ -147,7 +156,7 @@ function UpcomingAlarmBar({ alarms }) {
       <div className="mt-4">
         {currentAlarm ? (
           <>
-            <h4>{nextAlarm ? `Next: ${nextAlarm.label}` : "Final Alarm!"}</h4>
+            <h4>{nextAlarm ? `Coming Up: ${nextAlarm.label}` : "Final Alarm!"}</h4>
             <h2>{formatTimeLeft(timeLeft)}</h2>
           </>
         ) : (
