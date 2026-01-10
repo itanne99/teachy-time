@@ -170,6 +170,13 @@ function UpcomingAlarmBar({ alarms }) {
         // Time has come, let Effect 1 find the new active segment
         setTimeUntilNextAlarm(0);
       }
+
+      setProgressSuccess(success);
+      setProgressWarning(warning);
+      setProgressDanger(danger);
+
+      // schedule next frame
+      rafId = requestAnimationFrame(updateCountdown);
     };
 
     updateTimeUntilNext(); // Initial call
