@@ -1,6 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
+<h1 align="center">
+  <a href="https://github.com/itanne99/teachy-time">
+    <!-- Logo removed as requested -->
+  </a>
+</h1>
+
+<div align="center">
+  Teachy Time
+  <br />
+  <a href="#about"><strong>Explore the project »</strong></a>
+  <br />
+  <br />
+  <a href="https://github.com/itanne99/teachy-time/issues/new?assignees=&labels=bug&template=01_BUG_REPORT.md&title=bug%3A+">Report a Bug</a>
+  ·
+  <a href="https://github.com/itanne99/teachy-time/issues/new?assignees=&labels=enhancement&template=02_FEATURE_REQUEST.md&title=feat%3A+">Request a Feature</a>
+  .
+  <a href="https://github.com/itanne99/teachy-time/issues/new?assignees=&labels=question&template=04_SUPPORT_QUESTION.md&title=support%3A+">Ask a Question</a>
+</div>
+
+<div align="center">
+<br />
+
+[![Project license](https://img.shields.io/github/license/itanne99/teachy-time.svg?style=flat-square)](LICENSE)
+
+[![Pull Requests welcome](https://img.shields.io/badge/PRs-welcome-ff69b4.svg?style=flat-square)](https://github.com/itanne99/teachy-time/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22)
+[![code with love by itanne99](https://img.shields.io/badge/%3C%2F%3E%20with%20%E2%99%A5%20by-itanne99-ff1414.svg?style=flat-square)](https://github.com/itanne99)
+
+</div>
+
+<details open="open">
+<summary>Table of Contents</summary>
+
+- [About](#about)
+  - [Built With](#built-with)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+- [Usage](#usage)
+- [Roadmap](#roadmap)
+- [Support](#support)
+- [Project assistance](#project-assistance)
+- [Contributing](#contributing)
+- [Authors \& contributors](#authors--contributors)
+- [Security](#security)
+- [License](#license)
+
+</details>
+
+---
+
+## About
+
+> A stylish timer to help teachers keep track of their busy day.
+
+### Built With
+
+- [Next.js](https://nextjs.org)
+- [Supabase](https://supabase.com/)
+- [Bruno API](https://www.usebruno.com/)
 
 ## Getting Started
+
+### Prerequisites
+
+> To run this project, you will need to set up a Supabase project and configure your environment variables. Create a `.env.local` file in the root of your project with the following:
+>
+> ```
+> NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+> NEXT_PUBLIC_SUPABASE_KEY=your_supabase_anon_key
+> NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+> ```
+>
+> Ensure you have Node.js (v18 or higher recommended) and npm/yarn/pnpm/bun installed.
+
+### Installation
 
 First, run the development server:
 
@@ -24,17 +96,54 @@ The `pages/api` directory is mapped to `/api/*`. Files in this directory are tre
 
 This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## Learn More
+## Usage
 
-To learn more about Next.js, take a look at the following resources:
+> Teachy Time helps teachers manage their daily schedule by providing a visual countdown for active time segments and a list of upcoming alarms. Users can create, edit, and delete alarms, and copy schedules between different days of the week.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn-pages-router) - an interactive Next.js tutorial.
+## Roadmap
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+See the [open issues](https://github.com/itanne99/teachy-time/issues) for a list of proposed features (and known issues).
 
-## Deploy on Vercel
+- [Top Feature Requests](https://github.com/itanne99/teachy-time/issues?q=label%3Aenhancement+is%3Aopen+sort%3Areactions-%2B1-desc) (Add your votes using the 👍 reaction)
+- [Top Bugs](https://github.com/itanne99/teachy-time/issues?q=is%3Aissue+is%3Aopen+label%3Abug+sort%3Areactions-%2B1-desc) (Add your votes using the 👍 reaction)
+- [Newest Bugs](https://github.com/itanne99/teachy-time/issues?q=is%3Aopen+is%3Aissue+label%3Abug)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Support
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
+Reach out to the maintainer at one of the following places:
+
+- [GitHub issues](https://github.com/itanne99/teachy-time/issues/new?assignees=&labels=question&template=04_SUPPORT_QUESTION.md&title=support%3A+)
+- Contact options listed on [this GitHub profile](https://github.com/itanne99)
+
+## Project assistance
+
+If you want to say **thank you** or/and support active development of Teachy Time:
+
+- Add a [GitHub Star](https://github.com/itanne99/teachy-time) to the project.
+
+Together, we can make Teachy Time **better**!
+
+## Contributing
+
+First off, thanks for taking the time to contribute! Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make will benefit everybody else and are **greatly appreciated**.
+
+Please read [our contribution guidelines](docs/CONTRIBUTING.md), and thank you for being involved!
+
+## Authors & contributors
+
+The original setup of this repository is by [Ido Tanne](https://github.com/itanne99).
+
+For a full list of all authors and contributors, see [the contributors page](https://github.com/itanne99/teachy-time/contributors).
+
+## Security
+
+Teachy Time follows good practices of security, but 100% security cannot be assured.
+Teachy Time is provided **"as is"** without any **warranty**. Use at your own risk.
+
+_For more information and to report security issues, please refer to our [security documentation](docs/SECURITY.md)._
+
+## License
+
+This project is licensed under the **MIT license**.
+
+See [LICENSE](LICENSE) for more information.
