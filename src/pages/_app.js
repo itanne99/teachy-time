@@ -15,7 +15,6 @@ export default function App({ Component, pageProps }) {
 
   useEffect(() => {
     const fetchAlarms = async (currentSession) => {
-      console.log("Calling fetch alarms!")
       if (currentSession && Object.keys(alarms).every(day => alarms[day].length === 0)) {
           try {
             const response = await fetch('/api/alarms', {
@@ -39,7 +38,6 @@ export default function App({ Component, pageProps }) {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log('supabase logs:', _event, session)
       setSession(session);
       setUser(session?.user ?? null);
 
