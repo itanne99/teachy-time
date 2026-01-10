@@ -15,6 +15,7 @@ export default function App({ Component, pageProps }) {
 
   useEffect(() => {
     const fetchAlarms = async (currentSession) => {
+      console.log("Calling fetch alarms!")
       if (currentSession && Object.keys(alarms).every(day => alarms[day].length === 0)) {
           try {
             const response = await fetch('/api/alarms', {
@@ -35,7 +36,6 @@ export default function App({ Component, pageProps }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      fetchAlarms(session);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -45,7 +45,6 @@ export default function App({ Component, pageProps }) {
 
       switch (_event) {
         case 'INITIAL_SESSION':
-          fetchAlarms(session);
           break;
         case 'SIGNED_IN':
           fetchAlarms(session);

@@ -30,12 +30,20 @@ export const AlterAlarm = ({ show, onHide, onSave, alarm, day, validationError }
       <Modal.Body>
         {validationError && <Alert variant="danger">{validationError}</Alert>}
         <Form onSubmit={ (e) => {handleSave(e);} }>
-          <Form.Group className="mb-3" controlId="formAlarmTime">
-            <Form.Label>Time</Form.Label>
+          <Form.Group className="mb-3" controlId="formAlarmStartTime">
+            <Form.Label>Start Time</Form.Label>
             <Form.Control
               type="time"
-              value={currentAlarm?.time || ''}
-              onChange={(e) => handleChange('time', e.target.value)}
+              value={currentAlarm?.start_time || ''}
+              onChange={(e) => handleChange('start_time', e.target.value)}
+            />
+          </Form.Group>
+          <Form.Group className="mb-3" controlId="formAlarmEndTime">
+            <Form.Label>End Time</Form.Label>
+            <Form.Control
+              type="time"
+              value={currentAlarm?.end_time || ''}
+              onChange={(e) => handleChange('end_time', e.target.value)}
             />
           </Form.Group>
           <Form.Group className="mb-3" controlId="formAlarmLabel">
