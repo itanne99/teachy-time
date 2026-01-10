@@ -12,18 +12,8 @@ function UpcomingAlarmList({alarms}) {
       const upcoming = alarms
         .filter(alarm => {
           const [startHour, startMinute] = alarm.start_time.split(':').map(Number);
-          // const [endHour, endMinute] = alarm.end_time.split(':').map(Number); // endHour, endMinute not needed for this filter
 
           const alarmStartTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHour, startMinute, 0);
-          // let alarmEndTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endHour, endMinute, 0);
-
-          // Adjust end_time if the segment spans midnight (not strictly needed for this filter, but good practice if used elsewhere)
-          // if (alarmEndTime < alarmStartTime) {
-          //   alarmEndTime.setDate(alarmEndTime.getDate() + 1);
-          // }
-
-          // An alarm is "upcoming" if the current time is strictly before its start time
-          // This excludes the current active alarm
           return now < alarmStartTime;
         })
         .sort((a, b) => {
@@ -34,7 +24,7 @@ function UpcomingAlarmList({alarms}) {
     };
 
     filterAndSortAlarms(); // Initial filter and sort
-    const interval = setInterval(filterAndSortAlarms, 10 * 1000); // Re-filter every 10 seconds
+    const interval = setInterval(filterAndSortAlarms, 1 * 1000); // Re-filter every 1 seconds
 
     return () => clearInterval(interval); // Cleanup on unmount
   }, [alarms]);

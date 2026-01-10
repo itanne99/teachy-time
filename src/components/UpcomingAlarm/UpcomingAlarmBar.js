@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react"; // Import useRef
 import { ProgressBar } from "react-bootstrap";
 import CommonUtils from "@/services/CommonUtils";
 
@@ -12,9 +12,17 @@ function UpcomingAlarmBar({ alarms }) {
   const [progressPercentage, setProgressPercentage] = useState(0); // Single percentage for the bar
   const [barVariant, setBarVariant] = useState("secondary"); // Variant for the single bar
 
-  // Effect 1: Find active and next segments (runs every minute)
+  const endAlarmTimeoutRef = useRef(null); // Ref to store the timeout ID for current alarm's end
+
+  // Effect 1: Find active and next segments (runs every minute and on alarm end)
   useEffect(() => {
     const findActiveAndNextSegments = () => {
+      // Clear any existing end-alarm timeout to prevent multiple triggers
+      if (endAlarmTimeoutRef.current) {
+        clearTimeout(endAlarmTimeoutRef.current);
+        endAlarmTimeoutRef.current = null;
+      }
+
       const now = new Date();
       // Sort alarms by start_time to ensure correct order
       const sortedAlarms = [...alarms].sort((a, b) => a.start_time.localeCompare(b.start_time));
@@ -66,6 +74,13 @@ function UpcomingAlarmBar({ alarms }) {
           segmentEndTime.setDate(segmentEndTime.getDate() + 1);
         }
         setSegmentDuration((segmentEndTime - segmentStartTime) / 1000);
+
+        // Set a timeout to re-run this function exactly when the current alarm ends
+        const timeUntilEnd = segmentEndTime.getTime() - now.getTime();
+        if (timeUntilEnd > 0) {
+          // Add a small buffer (e.g., 50ms) to ensure 'now' is definitely past 'segmentEndTime'
+          endAlarmTimeoutRef.current = setTimeout(findActiveAndNextSegments, timeUntilEnd + 50);
+        }
       } else if (nextUpcomingSegment) {
         setCurrentAlarmLabel(`Upcoming: ${nextUpcomingSegment.label}`);
         setSegmentDuration(0); // No active segment, so no duration for the bar
@@ -93,9 +108,15 @@ function UpcomingAlarmBar({ alarms }) {
     };
 
     findActiveAndNextSegments(); // Initial call
-    const interval = setInterval(findActiveAndNextSegments, 60 * 1000); // Check for next alarm every minute
-    return () => clearInterval(interval);
-  }, [alarms]);
+    const secondInterval = setInterval(findActiveAndNextSegments, 1 * 1000); // Check for next alarm every minute
+
+    return () => {
+      clearInterval(secondInterval);
+      if (endAlarmTimeoutRef.current) {
+        clearTimeout(endAlarmTimeoutRef.current); // Clear timeout on unmount
+      }
+    };
+  }, [alarms]); // Dependencies: alarms
 
   // Effect 2: Countdown and progress bar for current active segment (runs every second)
   useEffect(() => {
@@ -117,11 +138,11 @@ function UpcomingAlarmBar({ alarms }) {
           segmentEndTime.setDate(segmentEndTime.getDate() + 1);
       }
 
-      const totalSecondsInSegment = (segmentEndTime - segmentStartTime) / 1000;
-      const remainingSeconds = (segmentEndTime - now) / 1000;
-      // const elapsedSeconds = (now - segmentStartTime) / 1000; // No longer needed for progress calculation
+      // Calculate durations in milliseconds for higher precision
+      const totalMillisecondsInSegment = (segmentEndTime - segmentStartTime);
+      const remainingMilliseconds = (segmentEndTime - now);
 
-      if (remainingSeconds <= 0) {
+      if (remainingMilliseconds <= 0) {
         setTimeLeftInCurrentSegment(0);
         setProgressPercentage(0); // Bar should be empty when segment ends
         setBarVariant("secondary"); // Or a final color
@@ -129,26 +150,25 @@ function UpcomingAlarmBar({ alarms }) {
         return;
       }
 
-      setTimeLeftInCurrentSegment(remainingSeconds);
+      // Update timeLeftInCurrentSegment in seconds for display
+      setTimeLeftInCurrentSegment(remainingMilliseconds / 1000);
 
-      // Calculate progress percentage based on remaining time
-      // This will make the bar's 'now' value decrease as time passes.
-      // With transform: "scaleX(-1)" on the container, the bar will appear to shrink from right to left.
-      const calculatedProgress = (remainingSeconds / totalSecondsInSegment) * 100;
+      // Calculate progress percentage based on remaining time (in milliseconds)
+      const calculatedProgress = (remainingMilliseconds / totalMillisecondsInSegment) * 100;
       setProgressPercentage(Math.min(100, Math.max(0, calculatedProgress))); // Ensure it's between 0 and 100
 
-      // Determine bar variant based on remaining time
-      if (remainingSeconds <= 61) {
-        setBarVariant("danger"); // Less than 1 minute
-      } else if (remainingSeconds <= 301) {
-        setBarVariant("warning"); // Less than 5 minutes
+      // Determine bar variant based on remaining time (in milliseconds)
+      if (remainingMilliseconds <= 60 * 1000) { // Less than 1 minute (60,000 ms)
+        setBarVariant("danger");
+      } else if (remainingMilliseconds <= 300 * 1000) { // Less than 5 minutes (300,000 ms)
+        setBarVariant("warning");
       } else {
         setBarVariant("success"); // More than 5 minutes
       }
     };
 
     updateCountdownAndProgress(); // Initial call
-    const interval = setInterval(updateCountdownAndProgress, 1000); // Update every second
+    const interval = setInterval(updateCountdownAndProgress, 100); // Update every 100 milliseconds for smoother progress
     return () => clearInterval(interval);
   }, [currentAlarm, segmentDuration]); // Dependencies: currentAlarm and its total duration
 
@@ -163,7 +183,7 @@ function UpcomingAlarmBar({ alarms }) {
       const now = new Date();
       const [nextStartHour, nextStartMinute] = nextAlarm.start_time.split(":").map(Number);
       const nextAlarmStartTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), nextStartHour, nextStartMinute, 0);
-      const remaining = (nextAlarmStartTime - now) / 1000;
+      const remaining = (nextAlarmStartTime - now) / 1000; // Keep in seconds for this countdown
       setTimeUntilNextAlarm(Math.max(0, remaining));
 
       if (remaining <= 0) {
@@ -180,7 +200,7 @@ function UpcomingAlarmBar({ alarms }) {
     };
 
     updateTimeUntilNext(); // Initial call
-    const interval = setInterval(updateTimeUntilNext, 1000);
+    const interval = setInterval(updateTimeUntilNext, 1000); // This countdown can remain at 1 second
     return () => clearInterval(interval);
   }, [currentAlarm, nextAlarm]); // Dependencies: currentAlarm (to know if we should run) and nextAlarm
 
@@ -201,7 +221,7 @@ function UpcomingAlarmBar({ alarms }) {
   return (
     <div className="upcoming-alarm-bar text-center p-3 bg-light" style={{ width: "100%" }}>
       <h1>{currentAlarmLabel}</h1>
-      <ProgressBar style={{ height: "4rem", transform: "scaleX(-1)" }}> {/* Re-added transform: "scaleX(-1)" */}
+      <ProgressBar style={{ height: "4rem", transform: "scaleX(-1)" }}>
         <ProgressBar animated variant={barVariant} now={progressPercentage} key={1} />
       </ProgressBar>
       <div className="mt-4">
