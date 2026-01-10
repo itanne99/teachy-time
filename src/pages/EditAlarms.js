@@ -9,7 +9,7 @@ export default function EditAlarms({ useStore }) {
   const alarms = useStore((state) => state.alarms);
   const setAlarms = useStore((state) => state.setAlarms);
   const user = useStore((state) => state.user);
-  const [sorting, setSorting] = React.useState([]);
+  const [sorting, setSorting] = React.useState([{ id: "start_time", desc: false }]); // Initialize sorting by start_time
   const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
   const [showModal, setShowModal] = useState(false);
@@ -53,7 +53,8 @@ export default function EditAlarms({ useStore }) {
   // Function to add a new alarm to the active day
   const handleAddAlarm = () => {
     const newAlarm = {
-      time: "00:00",
+      start_time: "00:00", // Changed from 'time'
+      end_time: "00:00",   // Added new field
       label: "New Alarm",
     };
     setEditingAlarm(newAlarm);
@@ -97,7 +98,7 @@ export default function EditAlarms({ useStore }) {
     const endpoint = "/api/alarms";
 
     const body = isUpdating
-      ? { id: alarmToSave.id, time: alarmToSave.time, label: alarmToSave.label }
+      ? { id: alarmToSave.id, start_time: alarmToSave.start_time, end_time: alarmToSave.end_time, label: alarmToSave.label } // Updated fields
       : {
           ...alarmToSave,
           user_id: user.id,
@@ -125,7 +126,8 @@ export default function EditAlarms({ useStore }) {
             [activeDay]: [...alarms[activeDay], data],
           });
         }
-        table.setSorting([{ id: "time", desc: false }]);
+        // Set sorting to re-sort by start_time after save
+        table.setSorting([{ id: "start_time", desc: false }]);
         setShowModal(false);
         setEditingAlarm(null);
       } else {
@@ -154,7 +156,8 @@ export default function EditAlarms({ useStore }) {
             body: JSON.stringify({
               user_id: user.id,
               day_of_week: toDayIndex,
-              time: alarm.time,
+              start_time: alarm.start_time, // Changed from 'time'
+              end_time: alarm.end_time,     // Added new field
               label: alarm.label,
             }),
           });
@@ -181,17 +184,25 @@ export default function EditAlarms({ useStore }) {
   const columns = useMemo(
     () => [
       {
-        accessorKey: "time",
-        header: "Time",
-        size: "20%",
+        accessorKey: "start_time", // Changed from 'time'
+        header: "Start Time",      // Changed header
+        size: "15%",               // Adjusted size
         sortingFn: "datetime",
         enableSorting: true,
-        cell: ({ row }) => <span style={{ fontSize: "2rem" }}>{CommonUtils.formatTime(row.original.time)}</span>,
+        cell: ({ row }) => <span style={{ fontSize: "2rem" }}>{CommonUtils.formatTime(row.original.start_time)}</span>, // Use start_time
+      },
+      {
+        accessorKey: "end_time",   // Added new column
+        header: "End Time",        // Added header
+        size: "15%",               // Adjusted size
+        sortingFn: "datetime",
+        enableSorting: true,
+        cell: ({ row }) => <span style={{ fontSize: "2rem" }}>{CommonUtils.formatTime(row.original.end_time)}</span>, // Use end_time
       },
       {
         accessorKey: "label",
         header: "Label",
-        size: "65%",
+        size: "55%", // Adjusted size
         cell: ({ row }) => <span style={{ fontSize: "2rem" }}>{row.original.label}</span>,
       },
       {

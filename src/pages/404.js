@@ -5,7 +5,7 @@ import { Container } from 'react-bootstrap'
 function Custom404(props) {
 
   useEffect(() => {
-    console.log(`props:`, props);
+    console.error(`props:`, props);
   }, [])
 
   return (

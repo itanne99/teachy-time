@@ -55,7 +55,6 @@ export default function Profile() {
   useEffect(() => {
     if (router.isReady) {
       const { reset } = router.query;
-      console.log('reset:',reset)
       if (reset != undefined && (reset === 'true' || reset === 'True')) {
         setPasswordResetFlag(true);
         // setForcedPasswordReset(true); // Removed: setForcedPasswordReset call
@@ -68,7 +67,6 @@ export default function Profile() {
     // This useEffect now only clears the query param if passwordResetFlag is false AND the param exists.
     // It no longer depends on 'forcedPasswordReset'.
     if (router.isReady && !passwordResetFlag && router.query.reset) {
-      console.log("Router Reset!!")
       router.replace(router.pathname, undefined, { shallow: true });
     }
   }, [passwordResetFlag, router.isReady, router.query.reset, router]);

@@ -11,10 +11,6 @@ export const NavBar = ({ useStore }) => {
   const currentPath = router.asPath;
   const session = useStore((state) => state.session);
 
-  useEffect(() => {
-    console.log(`Current path:`, currentPath);
-  }, [currentPath]);
-
   const pages = [
     { name: 'Home', path: '/', type: 'link' },
     { name: 'View', path: '/ViewAlarms', type: 'link' },

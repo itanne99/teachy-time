@@ -38,18 +38,6 @@ export class LoginHandler {
     if (sessionError) throw sessionError;
   }
 
-  async #fetchUserAlarms(userId) {
-    const alarmsResponse = await fetch("/api/alarms", {
-      method: "POST", // As per alarms.js, POST is used for fetching
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id: userId }),
-    });
-    const alarmsData = await alarmsResponse.json();
-    if (!alarmsResponse.ok)
-      throw new Error(alarmsData.error || "Failed to fetch alarms.");
-    return alarmsData;
-  }
-
   async login(email, password) {
     this.setIsLoading(true);
     if (!email || !password) {
@@ -62,10 +50,7 @@ export class LoginHandler {
     try {
       const authData = await this.#authenticateUser(email, password);
       await this.#setSupabaseSession(authData);
-      const alarmsData = await this.#fetchUserAlarms(authData.user.id);
 
-      this.setAlarms(alarmsData); // Update state with fetched alarms
-      console.log("User alarms:", alarmsData);
     } catch (error) {
       this.setError(error.message);
     } finally {

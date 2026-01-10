@@ -35,17 +35,14 @@ export default function App({ Component, pageProps }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      fetchAlarms(session);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log('supabase logs:', _event, session)
       setSession(session);
       setUser(session?.user ?? null);
 
       switch (_event) {
         case 'INITIAL_SESSION':
-          fetchAlarms(session);
           break;
         case 'SIGNED_IN':
           fetchAlarms(session);

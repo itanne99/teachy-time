@@ -22,16 +22,41 @@ export default async function handler(req, res) {
 
     if (alarmIdentifier.id) {
       queryBuilder = queryBuilder.eq('id', alarmIdentifier.id);
-    } else if (alarmIdentifier.day_of_week && alarmIdentifier.time) {
+    } else if (alarmIdentifier.day_of_week && alarmIdentifier.start_time && alarmIdentifier.end_time) { // Updated condition to use start_time and end_time
       queryBuilder = queryBuilder
         .eq('day_of_week', alarmIdentifier.day_of_week)
-        .eq('time', alarmIdentifier.time)
+        .eq('start_time', alarmIdentifier.start_time) // Use start_time
+        .eq('end_time', alarmIdentifier.end_time)   // Use end_time
         .eq('user_id', user_id);
     } else {
       return { data: null, error: { message: 'Invalid alarm identifier provided.' } };
     }
     const { data, error } = await queryBuilder.single();
     return { data, error };
+  };
+
+  const checkAlarmOverlap = async (day_of_week, new_start_time, new_end_time, user_id, exclude_alarm_id = null) => {
+    let queryBuilder = supabase.from('alarms').select('id');
+
+    queryBuilder = queryBuilder
+      .eq('user_id', user_id)
+      .eq('day_of_week', day_of_week)
+      // Overlap condition: (existing_start < new_end_time) AND (existing_end > new_start_time)
+      .lt('start_time', new_end_time)
+      .gt('end_time', new_start_time);
+
+    if (exclude_alarm_id) {
+      queryBuilder = queryBuilder.neq('id', exclude_alarm_id);
+    }
+
+    const { data, error } = await queryBuilder;
+
+    if (error) {
+      console.error('Supabase overlap check error:', error);
+      return { hasOverlap: false, error };
+    }
+
+    return { hasOverlap: data.length > 0, error: null };
   };
 
   switch (method) {
@@ -45,11 +70,12 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: 'User ID is required.' });
         }
 
-        let queryBuilder = supabase.from('alarms').select('*');
+        // Explicitly select columns to exclude 'time'
+        let queryBuilder = supabase.from('alarms').select('id, label, day_of_week, start_time, end_time, user_id');
 
         queryBuilder = queryBuilder.eq('user_id', user_id);
 
-        const { data, error } = await queryBuilder.order('time', { ascending: true });
+        const { data, error } = await queryBuilder.order('start_time', { ascending: true }); // Order by start_time
 
         if (data) {
           const transformedData = {
@@ -85,11 +111,16 @@ export default async function handler(req, res) {
     case 'PUT':
       // Create a new alarm
       try {
-        const { day_of_week, time, label, user_id } = body;
+        const { day_of_week, start_time, end_time, label, user_id } = body;
 
         // Check if required fields are present
-        if (!day_of_week || !time || !label || !user_id) {
-          return res.status(400).json({ error: 'Missing required fields: day_of_week, time, label, user_id.' });
+        if (!day_of_week || !start_time || !end_time || !label || !user_id) {
+          return res.status(400).json({ error: 'Missing required fields: day_of_week, start_time, end_time, label, user_id.' });
+        }
+
+        // New validation: start_time cannot be >= end_time
+        if (start_time >= end_time) {
+          return res.status(400).json({ error: 'End time cannot be before or the same as start time.' });
         }
 
         // Check if user_id is a valid user_id
@@ -103,13 +134,13 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: 'Invalid user ID.' });
         }
 
-        // Check if a user already has alarm at this time on this day
-        const { data: existingAlarm, error: existingAlarmError } = await checkExistingAlarm({ day_of_week, time }, user_id);
-        if (existingAlarmError && existingAlarmError.code !== 'PGRST116') { // PGRST116 means no rows found
-          return res.status(500).json({ error: existingAlarmError.message });
+        // Check if a user already has an alarm that overlaps with the new one
+        const { hasOverlap, error: overlapError } = await checkAlarmOverlap(day_of_week, start_time, end_time, user_id);
+        if (overlapError) {
+          return res.status(500).json({ error: overlapError.message });
         }
-        if (existingAlarm) {
-          return res.status(409).json({ error: 'An alarm at this time already exists for this user on this day.' });
+        if (hasOverlap) {
+          return res.status(409).json({ error: 'An alarm already overlaps with the specified start and end times for this user on this day.' });
         }
 
         const { data, error } = await supabase
@@ -117,7 +148,8 @@ export default async function handler(req, res) {
           .insert([{
             user_id:user_id,
             day_of_week: day_of_week,
-            time: time,
+            start_time: start_time,
+            end_time: end_time,
             label: label }])
           .select()
           .single();
@@ -136,7 +168,7 @@ export default async function handler(req, res) {
     case 'PATCH':
       // Update an existing alarm
       try {
-        const { id, time, label } = body;
+        const { id, start_time, end_time, label } = body;
         if (!id) {
           return res.status(400).json({ error: 'Alarm ID is required.' });
         }
@@ -151,20 +183,48 @@ export default async function handler(req, res) {
           return res.status(500).json({ error: alarmToUpdateError.message });
         }
 
-        if(!time || !label){
-          return res.status(400).json({ error: 'No update data provided.' });
+        // Check if any update data is provided for start_time, end_time, or label
+        if (!start_time && !end_time && !label) {
+          return res.status(400).json({ error: 'No update data provided for start_time, end_time, or label.' });
         }
 
-        // Check for conflict: if time or day_of_week is being updated, ensure no existing alarm at the new time/day
-        if (time !== alarmToUpdate.time || label !== alarmToUpdate.label) {
-          const { data: conflictingAlarm, error: conflictError } = await checkExistingAlarm({ day_of_week: alarmToUpdate.day_of_week, time }, alarmToUpdate.user_id);
-          if (conflictingAlarm && conflictingAlarm.id !== id) {
-            return res.status(409).json({ error: 'An alarm at this time already exists for this user on this day.' });
+        const updatePayload = {};
+        if (start_time) updatePayload.start_time = start_time;
+        if (end_time) updatePayload.end_time = end_time;
+        if (label) updatePayload.label = label;
+
+        // New validation: If both start_time and end_time are provided or derived, check their relation
+        const newStartTime = updatePayload.start_time || alarmToUpdate.start_time;
+        const newEndTime = updatePayload.end_time || alarmToUpdate.end_time;
+
+        if (newStartTime && newEndTime && newStartTime >= newEndTime) {
+          return res.status(400).json({ error: 'End time cannot be before or the same as start time.' });
+        }
+
+        // Determine if start_time or end_time is being changed
+        const isTimeChanging = (start_time && start_time !== alarmToUpdate.start_time) || (end_time && end_time !== alarmToUpdate.end_time);
+
+        // If time is changing, check for conflict with other alarms (excluding itself)
+        if (isTimeChanging) {
+          const { hasOverlap, error: overlapError } = await checkAlarmOverlap(
+            alarmToUpdate.day_of_week,
+            newStartTime,
+            newEndTime,
+            alarmToUpdate.user_id,
+            id // Exclude the current alarm being updated
+          );
+
+          if (overlapError) {
+            return res.status(500).json({ error: overlapError.message });
+          }
+          if (hasOverlap) {
+            return res.status(409).json({ error: 'The updated alarm times overlap with an existing alarm for this user on this day.' });
           }
         }
+
         const { data, error } = await supabase
           .from('alarms')
-          .update({ time: time, label: label })
+          .update(updatePayload)
           .eq('id', id)
           .select()
           .single();

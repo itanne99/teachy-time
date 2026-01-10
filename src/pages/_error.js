@@ -5,7 +5,7 @@ import { Container } from 'react-bootstrap'
 function _error(props) {
 
   useEffect(() => {
-    console.log(`props:`, props);
+    console.error(`props:`, props);
   }, [])
 
   return (

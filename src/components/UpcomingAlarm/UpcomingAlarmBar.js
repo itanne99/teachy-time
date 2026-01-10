@@ -5,113 +5,170 @@ import CommonUtils from "@/services/CommonUtils";
 function UpcomingAlarmBar({ alarms }) {
   const [currentAlarm, setCurrentAlarm] = useState(null);
   const [nextAlarm, setNextAlarm] = useState(null);
-  const [timeLeft, setTimeLeft] = useState(0); // in seconds
-  const [initialTotalDuration, setInitialTotalDuration] = useState(0); // in seconds
+  const [segmentDuration, setSegmentDuration] = useState(0); // Total duration of the current active segment in seconds
+  const [timeLeftInCurrentSegment, setTimeLeftInCurrentSegment] = useState(0); // Time left until current segment ends in seconds
+  const [timeUntilNextAlarm, setTimeUntilNextAlarm] = useState(0); // Time left until next segment starts in seconds
   const [currentAlarmLabel, setCurrentAlarmLabel] = useState("No alarms for today");
-  const [progressSuccess, setProgressSuccess] = useState(0);
-  const [progressWarning, setProgressWarning] = useState(0);
-  const [progressDanger, setProgressDanger] = useState(0);
+  const [progressPercentage, setProgressPercentage] = useState(0); // Single percentage for the bar
+  const [barVariant, setBarVariant] = useState("secondary"); // Variant for the single bar
 
+  // Effect 1: Find active and next segments (runs every minute)
   useEffect(() => {
-    const findNextAlarm = () => {
+    const findActiveAndNextSegments = () => {
       const now = new Date();
-      const sortedAlarms = [...alarms].sort((a, b) => a.time.localeCompare(b.time));
+      // Sort alarms by start_time to ensure correct order
+      const sortedAlarms = [...alarms].sort((a, b) => a.start_time.localeCompare(b.start_time));
 
-      const upcomingAlarms = sortedAlarms.filter(alarm => {
-        const [alarmHour, alarmMinute] = alarm.time.split(":").map(Number);
-        const alarmTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), alarmHour, alarmMinute, 0);
-        return alarmTime > now;
-      });
+      let activeSegment = null;
+      let nextUpcomingSegment = null;
 
-      const firstUpcoming = upcomingAlarms[0] || null;
-      const secondUpcoming = upcomingAlarms[1] || null;
+      for (let i = 0; i < sortedAlarms.length; i++) {
+        const alarm = sortedAlarms[i];
+        const [startHour, startMinute] = alarm.start_time.split(":").map(Number);
+        const [endHour, endMinute] = alarm.end_time.split(":").map(Number);
 
-      setCurrentAlarm(firstUpcoming);
-      setNextAlarm(secondUpcoming);
+        const segmentStartTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHour, startMinute, 0);
+        let segmentEndTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endHour, endMinute, 0);
 
-      // Update the main label
-      if (firstUpcoming) {
-        // Find the alarm that just passed to set the label
-        const passedAlarms = sortedAlarms.filter(alarm => {
-          const [alarmHour, alarmMinute] = alarm.time.split(":").map(Number);
-          const alarmTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), alarmHour, alarmMinute, 0);
-          return alarmTime <= now;
-        });
-        // The label should be the last alarm that passed
-        const lastPassed = passedAlarms[passedAlarms.length - 1];
-        if (lastPassed) {
-          setCurrentAlarmLabel(lastPassed.label);
-        } else {
-          // If no alarm has passed, we are before the first alarm of the day
-          setCurrentAlarmLabel("First alarm of the day");
+        // Adjust end_time if the segment spans midnight
+        if (segmentEndTime < segmentStartTime) {
+          segmentEndTime.setDate(segmentEndTime.getDate() + 1);
         }
+
+        if (now >= segmentStartTime && now < segmentEndTime) {
+          // Found the current active segment
+          activeSegment = alarm;
+          nextUpcomingSegment = sortedAlarms[i + 1] || null;
+          break; // Found active, no need to check further for active
+        } else if (now < segmentStartTime) {
+          // This alarm is in the future. If no active segment was found yet, this is the first upcoming.
+          if (!activeSegment && !nextUpcomingSegment) {
+            nextUpcomingSegment = alarm;
+          }
+          // If we found an upcoming segment, and no active segment, we can stop looking for the *first* upcoming.
+          if (!activeSegment && nextUpcomingSegment) {
+            break;
+          }
+        }
+      }
+
+      setCurrentAlarm(activeSegment);
+      setNextAlarm(nextUpcomingSegment);
+
+      // Update the main label and segment duration
+      if (activeSegment) {
+        setCurrentAlarmLabel(activeSegment.label);
+        const [startHour, startMinute] = activeSegment.start_time.split(":").map(Number);
+        const [endHour, endMinute] = activeSegment.end_time.split(":").map(Number);
+        const segmentStartTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHour, startMinute, 0);
+        let segmentEndTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endHour, endMinute, 0);
+        if (segmentEndTime < segmentStartTime) {
+          segmentEndTime.setDate(segmentEndTime.getDate() + 1);
+        }
+        setSegmentDuration((segmentEndTime - segmentStartTime) / 1000);
+      } else if (nextUpcomingSegment) {
+        setCurrentAlarmLabel(`Upcoming: ${nextUpcomingSegment.label}`);
+        setSegmentDuration(0); // No active segment, so no duration for the bar
       } else {
-        // After the last alarm has passed
-        const lastAlarmOfDay = sortedAlarms[sortedAlarms.length - 1];
-        setCurrentAlarmLabel(lastAlarmOfDay ? lastAlarmOfDay.label : "No alarms for today");
+        // No active or upcoming alarms. Check if all alarms have passed for today.
+        if (sortedAlarms.length > 0) {
+          const lastAlarmOfDay = sortedAlarms[sortedAlarms.length - 1];
+          const [lastStartHour, lastStartMinute] = lastAlarmOfDay.start_time.split(":").map(Number);
+          const [lastEndHour, lastEndMinute] = lastAlarmOfDay.end_time.split(":").map(Number);
+          let lastAlarmStartTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), lastStartHour, lastStartMinute, 0);
+          let lastAlarmEndTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), lastEndHour, lastEndMinute, 0);
+          if (lastAlarmEndTime < lastAlarmStartTime) {
+              lastAlarmEndTime.setDate(lastAlarmEndTime.getDate() + 1);
+          }
+          if (now > lastAlarmEndTime) {
+            setCurrentAlarmLabel(`After last alarm: ${lastAlarmOfDay.label}`);
+          } else {
+            setCurrentAlarmLabel("No alarms for today"); // Fallback if logic doesn't catch it
+          }
+        } else {
+          setCurrentAlarmLabel("No alarms for today");
+        }
+        setSegmentDuration(0);
       }
     };
 
-    findNextAlarm(); // Initial call
-    const interval = setInterval(findNextAlarm, 60 * 1000); // Check for next alarm every minute
+    findActiveAndNextSegments(); // Initial call
+    const interval = setInterval(findActiveAndNextSegments, 60 * 1000); // Check for next alarm every minute
     return () => clearInterval(interval);
   }, [alarms]);
 
+  // Effect 2: Countdown and progress bar for current active segment (runs every second)
   useEffect(() => {
-    if (currentAlarm) {
-      const now = new Date();
-      const [currentHour, currentMinute] = currentAlarm.time.split(":").map(Number);
-      const alarmTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), currentHour, currentMinute, 0);
-      const totalSeconds = (alarmTime - now) / 1000;
-
-      if (totalSeconds > 0) {
-        setInitialTotalDuration(totalSeconds);
-      }
-    }
-  }, [currentAlarm]);
-
-  useEffect(() => {
-    if (!currentAlarm) {
-      setProgressSuccess(0); // Bar is full when no next alarm
-      setInitialTotalDuration(0);
-      setProgressWarning(0);
-      setProgressDanger(0);
+    if (!currentAlarm || segmentDuration <= 0) {
+      setProgressPercentage(0);
+      setBarVariant("secondary");
+      setTimeLeftInCurrentSegment(0);
       return;
     }
 
-    let rafId;
-    const updateCountdown = () => {
-      const nowMs = Date.now();
-      const [currentHour, currentMinute] = currentAlarm.time.split(":").map(Number);
-      const alarmTime = new Date();
-      alarmTime.setHours(currentHour, currentMinute, 0, 0);
-      const totalSeconds = (alarmTime.getTime() - nowMs) / 1000; // fractional seconds
-      if (totalSeconds <= 0) {
-        setTimeLeft(0);
-        // let the outer effect that finds next alarm handle advancing
+    const updateCountdownAndProgress = () => {
+      const now = new Date();
+      const [startHour, startMinute] = currentAlarm.start_time.split(":").map(Number);
+      const [endHour, endMinute] = currentAlarm.end_time.split(":").map(Number);
+
+      const segmentStartTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHour, startMinute, 0);
+      let segmentEndTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endHour, endMinute, 0);
+      if (segmentEndTime < segmentStartTime) {
+          segmentEndTime.setDate(segmentEndTime.getDate() + 1);
+      }
+
+      const totalSecondsInSegment = (segmentEndTime - segmentStartTime) / 1000;
+      const remainingSeconds = (segmentEndTime - now) / 1000;
+      // const elapsedSeconds = (now - segmentStartTime) / 1000; // No longer needed for progress calculation
+
+      if (remainingSeconds <= 0) {
+        setTimeLeftInCurrentSegment(0);
+        setProgressPercentage(0); // Bar should be empty when segment ends
+        setBarVariant("secondary"); // Or a final color
+        // Let Effect 1 handle finding the next alarm when this segment ends
         return;
       }
-      setTimeLeft(totalSeconds);
 
-      // percent remaining relative to when the alarm was first detected
-      let percentRemaining = 100;
-      if (initialTotalDuration > 0) {
-        percentRemaining = Math.max(0, Math.min(100, (totalSeconds / initialTotalDuration) * 100));
-      }
+      setTimeLeftInCurrentSegment(remainingSeconds);
 
-      // Reset all segments first
-      let success = 0, warning = 0, danger = 0;
+      // Calculate progress percentage based on remaining time
+      // This will make the bar's 'now' value decrease as time passes.
+      // With transform: "scaleX(-1)" on the container, the bar will appear to shrink from right to left.
+      const calculatedProgress = (remainingSeconds / totalSecondsInSegment) * 100;
+      setProgressPercentage(Math.min(100, Math.max(0, calculatedProgress))); // Ensure it's between 0 and 100
 
-      // Choose color based on thresholds:
-      // > 5 minutes => green (success)
-      // <= 5 minutes and > 1 minute => yellow (warning)
-      // <= 1 minute => red (danger)
-      if (totalSeconds > 300) {
-        success = percentRemaining;
-      } else if (totalSeconds > 60) {
-        warning = percentRemaining;
+      // Determine bar variant based on remaining time
+      if (remainingSeconds <= 61) {
+        setBarVariant("danger"); // Less than 1 minute
+      } else if (remainingSeconds <= 301) {
+        setBarVariant("warning"); // Less than 5 minutes
       } else {
-        danger = percentRemaining;
+        setBarVariant("success"); // More than 5 minutes
+      }
+    };
+
+    updateCountdownAndProgress(); // Initial call
+    const interval = setInterval(updateCountdownAndProgress, 1000); // Update every second
+    return () => clearInterval(interval);
+  }, [currentAlarm, segmentDuration]); // Dependencies: currentAlarm and its total duration
+
+  // Effect 3: Countdown for time until next alarm (runs every second, only if no current alarm)
+  useEffect(() => {
+    if (currentAlarm || !nextAlarm) {
+      setTimeUntilNextAlarm(0); // Reset if there's an active alarm or no next alarm
+      return;
+    }
+
+    const updateTimeUntilNext = () => {
+      const now = new Date();
+      const [nextStartHour, nextStartMinute] = nextAlarm.start_time.split(":").map(Number);
+      const nextAlarmStartTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), nextStartHour, nextStartMinute, 0);
+      const remaining = (nextAlarmStartTime - now) / 1000;
+      setTimeUntilNextAlarm(Math.max(0, remaining));
+
+      if (remaining <= 0) {
+        // Time has come, let Effect 1 find the new active segment
+        setTimeUntilNextAlarm(0);
       }
 
       setProgressSuccess(success);
@@ -122,13 +179,10 @@ function UpcomingAlarmBar({ alarms }) {
       rafId = requestAnimationFrame(updateCountdown);
     };
 
-    // kick off loop
-    rafId = requestAnimationFrame(updateCountdown);
-
-    return () => {
-      if (rafId) cancelAnimationFrame(rafId);
-    };
-  }, [currentAlarm, initialTotalDuration]);
+    updateTimeUntilNext(); // Initial call
+    const interval = setInterval(updateTimeUntilNext, 1000);
+    return () => clearInterval(interval);
+  }, [currentAlarm, nextAlarm]); // Dependencies: currentAlarm (to know if we should run) and nextAlarm
 
   const formatTimeLeft = (seconds) => {
     if (seconds <= 0) return "00:00:00";
@@ -146,21 +200,24 @@ function UpcomingAlarmBar({ alarms }) {
 
   return (
     <div className="upcoming-alarm-bar text-center p-3 bg-light" style={{ width: "100%" }}>
-      <h1>{currentAlarm?.label}</h1>
-      <ProgressBar style={{ height: "4rem", transform: "rotate(180deg)" }}>
-        <ProgressBar animated variant="danger" now={progressDanger} key={1} />
-        <ProgressBar animated variant="warning" now={progressWarning} key={2} />
-        <ProgressBar animated variant="success" now={progressSuccess} key={3} />
-        <ProgressBar now={100 - (progressSuccess + progressWarning + progressDanger)} variant="secondary" key={4} />
+      <h1>{currentAlarmLabel}</h1>
+      <ProgressBar style={{ height: "4rem", transform: "scaleX(-1)" }}> {/* Re-added transform: "scaleX(-1)" */}
+        <ProgressBar animated variant={barVariant} now={progressPercentage} key={1} />
       </ProgressBar>
       <div className="mt-4">
         {currentAlarm ? (
           <>
-            <h4>{nextAlarm ? `Coming Up: ${nextAlarm.label}` : "Final Alarm!"}</h4>
-            <h2>{formatTimeLeft(timeLeft)}</h2>
+            <h4>{nextAlarm ? `Next: ${nextAlarm.label} (${CommonUtils.formatTime(nextAlarm.start_time)})` : "Final Alarm for Today!"}</h4>
+            <h2>{formatTimeLeft(timeLeftInCurrentSegment)}</h2>
           </>
         ) : (
-          <h4>Final Alarm!</h4>
+          // No current active alarm
+          <>
+            <h4>{nextAlarm ? `Next: ${nextAlarm.label} (${CommonUtils.formatTime(nextAlarm.start_time)})` : "No upcoming alarms for today."}</h4>
+            {nextAlarm && (
+                <h2>{formatTimeLeft(timeUntilNextAlarm)}</h2>
+            )}
+          </>
         )}
       </div>
     </div>
