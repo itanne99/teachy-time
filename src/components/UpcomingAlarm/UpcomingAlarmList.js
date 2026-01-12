@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Card, Col, Stack } from 'react-bootstrap'
+import { Card, Stack } from 'react-bootstrap'
 import CommonUtils from '@/services/CommonUtils'
 
 function UpcomingAlarmList({alarms}) {
