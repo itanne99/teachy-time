@@ -67,7 +67,8 @@ export default async function handler(req, res) {
 
         // If no user_id provided, return error
         if (!user_id) {
-          return res.status(400).json({ error: 'User ID is required.' });
+          res.status(400).json({ error: 'User ID is required.' });
+          return;
         }
 
         // Explicitly select columns to exclude 'time'
@@ -94,12 +95,14 @@ export default async function handler(req, res) {
               transformedData[dayName].push(alarm);
             }
           });
-          return res.status(200).json(transformedData);
+          res.status(200).json(transformedData);
+          return;
         }
 
         if (error) {
           console.error('Supabase error:', error);
-          return res.status(500).json({ error: error.message });
+          res.status(500).json({ error: error.message });
+          return;
         }
 
         res.status(200).json(data);
@@ -114,33 +117,39 @@ export default async function handler(req, res) {
         const { day_of_week, start_time, end_time, label, user_id } = body;
 
         // Check if required fields are present
-        if (!day_of_week || !start_time || !end_time || !label || !user_id) {
-          return res.status(400).json({ error: 'Missing required fields: day_of_week, start_time, end_time, label, user_id.' });
+        if (!day_of_week && day_of_week !== 0 || !start_time || !end_time || !label || !user_id) {
+          res.status(400).json({ error: 'Missing required fields: day_of_week, start_time, end_time, label, user_id.' });
+          return;
         }
 
         // New validation: start_time cannot be >= end_time
         if (start_time >= end_time) {
-          return res.status(400).json({ error: 'End time cannot be before or the same as start time.' });
+          res.status(400).json({ error: 'End time cannot be before or the same as start time.' });
+          return;
         }
 
         // Check if user_id is a valid user_id
         const userExists = await supabaseService.auth.admin.getUserById(user_id);
 
         if(userExists.error){
-          return res.status(500).json({ error: userExists.error.message });
+          res.status(500).json({ error: userExists.error.message });
+          return;
         }
 
         if (!userExists.data) {
-          return res.status(400).json({ error: 'Invalid user ID.' });
+          res.status(400).json({ error: 'Invalid user ID.' });
+          return;
         }
 
         // Check if a user already has an alarm that overlaps with the new one
         const { hasOverlap, error: overlapError } = await checkAlarmOverlap(day_of_week, start_time, end_time, user_id);
         if (overlapError) {
-          return res.status(500).json({ error: overlapError.message });
+          res.status(500).json({ error: overlapError.message });
+          return;
         }
         if (hasOverlap) {
-          return res.status(409).json({ error: 'An alarm already overlaps with the specified start and end times for this user on this day.' });
+          res.status(409).json({ error: 'An alarm already overlaps with the specified start and end times for this user on this day.' });
+          return;
         }
 
         const { data, error } = await supabase
@@ -156,7 +165,8 @@ export default async function handler(req, res) {
 
         if (error) {
           console.error('Supabase error:', error);
-          return res.status(500).json({ error: error.message });
+          res.status(500).json({ error: error.message });
+          return;
         }
 
         res.status(201).json(data);
@@ -170,22 +180,26 @@ export default async function handler(req, res) {
       try {
         const { id, start_time, end_time, label } = body;
         if (!id) {
-          return res.status(400).json({ error: 'Alarm ID is required.' });
+          res.status(400).json({ error: 'Alarm ID is required.' });
+          return;
         }
 
         const { data: alarmToUpdate, error: alarmToUpdateError } = await checkExistingAlarm({ id });
 
         if (alarmToUpdateError) {
           if (alarmToUpdateError.code === 'PGRST116') { // No rows found
-            return res.status(404).json({ error: 'Alarm not found.' });
+            res.status(404).json({ error: 'Alarm not found.' });
+            return;
           }
           console.error('Supabase error:', alarmToUpdateError);
-          return res.status(500).json({ error: alarmToUpdateError.message });
+          res.status(500).json({ error: alarmToUpdateError.message });
+          return;
         }
 
         // Check if any update data is provided for start_time, end_time, or label
         if (!start_time && !end_time && !label) {
-          return res.status(400).json({ error: 'No update data provided for start_time, end_time, or label.' });
+          res.status(400).json({ error: 'No update data provided for start_time, end_time, or label.' });
+          return;
         }
 
         const updatePayload = {};
@@ -198,7 +212,8 @@ export default async function handler(req, res) {
         const newEndTime = updatePayload.end_time || alarmToUpdate.end_time;
 
         if (newStartTime && newEndTime && newStartTime >= newEndTime) {
-          return res.status(400).json({ error: 'End time cannot be before or the same as start time.' });
+          res.status(400).json({ error: 'End time cannot be before or the same as start time.' });
+          return;
         }
 
         // Determine if start_time or end_time is being changed
@@ -215,10 +230,12 @@ export default async function handler(req, res) {
           );
 
           if (overlapError) {
-            return res.status(500).json({ error: overlapError.message });
+            res.status(500).json({ error: overlapError.message });
+            return;
           }
           if (hasOverlap) {
-            return res.status(409).json({ error: 'The updated alarm times overlap with an existing alarm for this user on this day.' });
+            res.status(409).json({ error: 'The updated alarm times overlap with an existing alarm for this user on this day.' });
+            return;
           }
         }
 
@@ -231,7 +248,8 @@ export default async function handler(req, res) {
 
         if (error) {
           console.error('Supabase error:', error);
-          return res.status(500).json({ error: error.message });
+          res.status(500).json({ error: error.message });
+          return;
         }
 
         res.status(200).json(data);
@@ -250,10 +268,12 @@ export default async function handler(req, res) {
 
           if (alarmToDeleteError) {
             if (alarmToDeleteError.code === 'PGRST116') { // No rows found
-              return res.status(404).json({ error: 'Alarm not found.' });
+              res.status(404).json({ error: 'Alarm not found.' });
+              return;
             }
             console.error('Supabase error:', alarmToDeleteError);
-            return res.status(500).json({ error: alarmToDeleteError.message });
+            res.status(500).json({ error: alarmToDeleteError.message });
+            return;
           }
 
           const { error } = await supabase
@@ -262,10 +282,12 @@ export default async function handler(req, res) {
             .eq('id', id);
 
           if (error) {
-            return res.status(500).json({ error: error.message });
+            res.status(500).json({ error: error.message });
+            return;
           }
 
-          return res.status(200).end(); // Delete successful
+          res.status(200).end(); // Delete successful
+          return;
         } 
         
         if (user_id && day_of_week !== undefined) {
@@ -276,13 +298,15 @@ export default async function handler(req, res) {
             .eq('day_of_week', day_of_week);
 
           if (error) {
-            return res.status(500).json({ error: error.message });
+            res.status(500).json({ error: error.message });
+            return;
           }
 
-          return res.status(200).end(); // Bulk delete successful
+          res.status(200).end(); // Bulk delete successful
+          return;
         }
 
-        return res.status(400).json({ error: 'Alarm ID or User ID and Day of Week are required.' });
+        res.status(400).json({ error: 'Alarm ID or User ID and Day of Week are required.' });
       } catch (error) {
         res.status(500).json({ error: 'An unexpected error occurred.', details: error.message });
       }
