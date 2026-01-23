@@ -212,23 +212,23 @@ function UpcomingAlarmBar({ alarms }) {
   };
 
   return (
-    <div className="upcoming-alarm-bar text-center p-3 bg-light" style={{ width: "100%" }}>
-      <h1>{currentAlarmLabel}</h1>
-      <ProgressBar style={{ height: "4rem", transform: "scaleX(-1)" }}>
+    <div className="upcoming-alarm-bar text-center p-4" style={{ width: "100%" }}>
+      <h1 className="display-4 fw-bold mb-4">{currentAlarmLabel}</h1>
+      <ProgressBar style={{ height: "5rem", transform: "scaleX(-1)", borderRadius: "1rem" }}>
         <ProgressBar animated variant={barVariant} now={progressPercentage} key={1} />
       </ProgressBar>
       <div className="mt-4">
         {currentAlarm ? (
           <>
-            <h4>{nextAlarm ? `Next: ${nextAlarm.label} (${CommonUtils.formatTime(nextAlarm.start_time)})` : "Final Alarm for Today!"}</h4>
-            <h2>{formatTimeLeft(timeLeftInCurrentSegment)}</h2>
+            <h4 className="text-muted mb-2">{nextAlarm ? `Next: ${nextAlarm.label} (${CommonUtils.formatTime(nextAlarm.start_time)})` : "Final Alarm for Today!"}</h4>
+            <h2 className="display-1 fw-bold font-monospace">{formatTimeLeft(timeLeftInCurrentSegment)}</h2>
           </>
         ) : (
           // No current active alarm
           <>
-            <h4>{nextAlarm ? `Next: ${nextAlarm.label} (${CommonUtils.formatTime(nextAlarm.start_time)})` : "No upcoming alarms for today."}</h4>
+            <h4 className="text-muted mb-2">{nextAlarm ? `Next: ${nextAlarm.label} (${CommonUtils.formatTime(nextAlarm.start_time)})` : "No upcoming alarms for today."}</h4>
             {nextAlarm && (
-                <h2>{formatTimeLeft(timeUntilNextAlarm)}</h2>
+                <h2 className="display-1 fw-bold font-monospace">{formatTimeLeft(timeUntilNextAlarm)}</h2>
             )}
           </>
         )}
