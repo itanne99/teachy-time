@@ -10,6 +10,7 @@ export default function EditAlarms({ useStore }) {
   const alarms = useStore((state) => state.alarms);
   const setAlarms = useStore((state) => state.setAlarms);
   const user = useStore((state) => state.user);
+  const currentScheduleId = useStore((state) => state.currentScheduleId);
   const [sorting, setSorting] = React.useState([{ id: "start_time", desc: false }]); // Initialize sorting by start_time
   const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -26,16 +27,16 @@ export default function EditAlarms({ useStore }) {
     setActiveDay(CommonUtils.getCurrentDay());
   }, []);
 
-  // Fetch alarms when user is available
+  // Fetch alarms when user or currentScheduleId changes
   useEffect(() => {
     const fetchAlarms = async () => {
-      if (user?.id) {
+      if (user?.id && currentScheduleId) {
         setLoading(true);
         try {
           const response = await fetch("/api/alarms", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ user_id: user.id }),
+            body: JSON.stringify({ user_id: user.id, schedule_id: currentScheduleId }),
           });
           const data = await response.json();
           if (response.ok) {
@@ -51,7 +52,7 @@ export default function EditAlarms({ useStore }) {
       }
     };
     fetchAlarms();
-  }, [setAlarms]);
+  }, [setAlarms, user, currentScheduleId]);
 
   // Function to add a new alarm to the active day
   const handleAddAlarm = () => {
@@ -105,6 +106,7 @@ export default function EditAlarms({ useStore }) {
       : {
           ...alarmToSave,
           user_id: user.id,
+          schedule_id: currentScheduleId,
           day_of_week: daysOfWeek.indexOf(activeDay),
         };
 
@@ -154,6 +156,7 @@ export default function EditAlarms({ useStore }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           user_id: user.id,
+          schedule_id: currentScheduleId,
           day_of_week: toDayIndex,
         }),
       });
@@ -172,6 +175,7 @@ export default function EditAlarms({ useStore }) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               user_id: user.id,
+              schedule_id: currentScheduleId,
               day_of_week: toDayIndex,
               start_time: alarm.start_time,
               end_time: alarm.end_time,

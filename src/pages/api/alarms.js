@@ -17,17 +17,18 @@ export default async function handler(req, res) {
   const supabase = createClient(req, res);
 
   // Helper function to check for existing alarms
-  const checkExistingAlarm = async (alarmIdentifier, user_id) => {
+  const checkExistingAlarm = async (alarmIdentifier, user_id, schedule_id) => {
     let queryBuilder = supabase.from('alarms').select('*');
 
     if (alarmIdentifier.id) {
       queryBuilder = queryBuilder.eq('id', alarmIdentifier.id);
-    } else if (alarmIdentifier.day_of_week && alarmIdentifier.start_time && alarmIdentifier.end_time) { // Updated condition to use start_time and end_time
+    } else if (alarmIdentifier.day_of_week && alarmIdentifier.start_time && alarmIdentifier.end_time && schedule_id) { // Updated condition to use start_time and end_time
       queryBuilder = queryBuilder
         .eq('day_of_week', alarmIdentifier.day_of_week)
         .eq('start_time', alarmIdentifier.start_time) // Use start_time
         .eq('end_time', alarmIdentifier.end_time)   // Use end_time
-        .eq('user_id', user_id);
+        .eq('user_id', user_id)
+        .eq('schedule_id', schedule_id);
     } else {
       return { data: null, error: { message: 'Invalid alarm identifier provided.' } };
     }
@@ -35,11 +36,12 @@ export default async function handler(req, res) {
     return { data, error };
   };
 
-  const checkAlarmOverlap = async (day_of_week, new_start_time, new_end_time, user_id, exclude_alarm_id = null) => {
+  const checkAlarmOverlap = async (day_of_week, new_start_time, new_end_time, user_id, schedule_id, exclude_alarm_id = null) => {
     let queryBuilder = supabase.from('alarms').select('id');
 
     queryBuilder = queryBuilder
       .eq('user_id', user_id)
+      .eq('schedule_id', schedule_id)
       .eq('day_of_week', day_of_week)
       // Overlap condition: (existing_start < new_end_time) AND (existing_end > new_start_time)
       .lt('start_time', new_end_time)
@@ -63,18 +65,18 @@ export default async function handler(req, res) {
     case 'POST': // Or POST for fetching with a body
       // Fetch alarms, optionally filtered by day
       try {
-        const { user_id } = body;
+        const { user_id, schedule_id } = body;
 
         // If no user_id provided, return error
-        if (!user_id) {
-          res.status(400).json({ error: 'User ID is required.' });
+        if (!user_id || !schedule_id) {
+          res.status(400).json({ error: 'User ID and Schedule ID are required.' });
           return;
         }
 
         // Explicitly select columns to exclude 'time'
-        let queryBuilder = supabase.from('alarms').select('id, label, day_of_week, start_time, end_time, user_id');
+        let queryBuilder = supabase.from('alarms').select('id, label, day_of_week, start_time, end_time, user_id, schedule_id');
 
-        queryBuilder = queryBuilder.eq('user_id', user_id);
+        queryBuilder = queryBuilder.eq('user_id', user_id).eq('schedule_id', schedule_id);
 
         const { data, error } = await queryBuilder.order('start_time', { ascending: true }); // Order by start_time
 
@@ -114,11 +116,11 @@ export default async function handler(req, res) {
     case 'PUT':
       // Create a new alarm
       try {
-        const { day_of_week, start_time, end_time, label, user_id } = body;
+        const { day_of_week, start_time, end_time, label, user_id, schedule_id } = body;
 
         // Check if required fields are present
-        if (!day_of_week && day_of_week !== 0 || !start_time || !end_time || !label || !user_id) {
-          res.status(400).json({ error: 'Missing required fields: day_of_week, start_time, end_time, label, user_id.' });
+        if (!day_of_week && day_of_week !== 0 || !start_time || !end_time || !label || !user_id || !schedule_id) {
+          res.status(400).json({ error: 'Missing required fields: day_of_week, start_time, end_time, label, user_id, schedule_id.' });
           return;
         }
 
@@ -142,7 +144,7 @@ export default async function handler(req, res) {
         }
 
         // Check if a user already has an alarm that overlaps with the new one
-        const { hasOverlap, error: overlapError } = await checkAlarmOverlap(day_of_week, start_time, end_time, user_id);
+        const { hasOverlap, error: overlapError } = await checkAlarmOverlap(day_of_week, start_time, end_time, user_id, schedule_id);
         if (overlapError) {
           res.status(500).json({ error: overlapError.message });
           return;
@@ -156,6 +158,7 @@ export default async function handler(req, res) {
           .from('alarms')
           .insert([{
             user_id:user_id,
+            schedule_id: schedule_id,
             day_of_week: day_of_week,
             start_time: start_time,
             end_time: end_time,
@@ -226,6 +229,7 @@ export default async function handler(req, res) {
             newStartTime,
             newEndTime,
             alarmToUpdate.user_id,
+            alarmToUpdate.schedule_id,
             id // Exclude the current alarm being updated
           );
 
