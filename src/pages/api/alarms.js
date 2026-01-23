@@ -241,33 +241,48 @@ export default async function handler(req, res) {
       break;
 
     case 'DELETE':
-      // Delete an alarm
+      // Delete an alarm or all alarms for a day
       try {
-        const { id } = body;
-        if (!id) {
-          return res.status(400).json({ error: 'Alarm ID is required.' });
-        }
+        const { id, user_id, day_of_week } = body;
+        
+        if (id) {
+          const { data: alarmToDelete, error: alarmToDeleteError } = await checkExistingAlarm({ id });
 
-        const { data: alarmToDelete, error: alarmToDeleteError } = await checkExistingAlarm({ id });
-
-        if (alarmToDeleteError) {
-          if (alarmToDeleteError.code === 'PGRST116') { // No rows found
-            return res.status(404).json({ error: 'Alarm not found.' });
+          if (alarmToDeleteError) {
+            if (alarmToDeleteError.code === 'PGRST116') { // No rows found
+              return res.status(404).json({ error: 'Alarm not found.' });
+            }
+            console.error('Supabase error:', alarmToDeleteError);
+            return res.status(500).json({ error: alarmToDeleteError.message });
           }
-          console.error('Supabase error:', alarmToDeleteError);
-          return res.status(500).json({ error: alarmToDeleteError.message });
+
+          const { error } = await supabase
+            .from('alarms')
+            .delete()
+            .eq('id', id);
+
+          if (error) {
+            return res.status(500).json({ error: error.message });
+          }
+
+          return res.status(200).end(); // Delete successful
+        } 
+        
+        if (user_id && day_of_week !== undefined) {
+          const { error } = await supabase
+            .from('alarms')
+            .delete()
+            .eq('user_id', user_id)
+            .eq('day_of_week', day_of_week);
+
+          if (error) {
+            return res.status(500).json({ error: error.message });
+          }
+
+          return res.status(200).end(); // Bulk delete successful
         }
 
-        const { error } = await supabase
-          .from('alarms')
-          .delete()
-          .eq('id', id);
-
-        if (error) {
-          return res.status(500).json({ error: error.message });
-        }
-
-        res.status(200).end(); // Delete successful, no content to return
+        return res.status(400).json({ error: 'Alarm ID or User ID and Day of Week are required.' });
       } catch (error) {
         res.status(500).json({ error: 'An unexpected error occurred.', details: error.message });
       }
