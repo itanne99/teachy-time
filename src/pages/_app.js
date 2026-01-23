@@ -12,29 +12,41 @@ export default function App({ Component, pageProps }) {
   const alarms = useStore((state) => state.alarms);
   const setUser = useStore((state) => state.setUser);
   const setSession = useStore((state) => state.setSession);
+  const setSchedules = useStore((state) => state.setSchedules);
+  const currentScheduleId = useStore((state) => state.currentScheduleId);
+  const setCurrentScheduleId = useStore((state) => state.setCurrentScheduleId);
+  const session = useStore((state) => state.session);
 
   useEffect(() => {
-    const fetchAlarms = async (currentSession) => {
-      if (currentSession && Object.keys(alarms).every(day => alarms[day].length === 0)) {
-          try {
-            const response = await fetch('/api/alarms', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ user_id: currentSession.user.id }),
-            });
-            const data = await response.json();
-            if (response.ok) {
-              setAlarms(data);
+    const fetchSchedules = async (currentSession) => {
+      if (currentSession) {
+        try {
+          const response = await fetch('/api/schedules', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: currentSession.user.id }),
+          });
+          const data = await response.json();
+          if (response.ok) {
+            setSchedules(data);
+            // Only set default if one isn't already selected
+            if (!currentScheduleId) {
+              const mainSchedule = data.find(s => s.name.toLowerCase() === 'main') || data[0];
+              if (mainSchedule) {
+                setCurrentScheduleId(mainSchedule.id);
+              }
             }
-          } catch (error) {
-            console.error('Failed to fetch alarms:', error);
           }
+        } catch (error) {
+          console.error('Failed to fetch schedules:', error);
         }
+      }
     };
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      if (session) fetchSchedules(session);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -45,10 +57,12 @@ export default function App({ Component, pageProps }) {
         case 'INITIAL_SESSION':
           break;
         case 'SIGNED_IN':
-          fetchAlarms(session);
+          fetchSchedules(session);
           break;
         case 'SIGNED_OUT':
           setAlarms({});
+          setSchedules([]);
+          setCurrentScheduleId(null);
           break;
         case 'PASSWORD_RECOVERY':
           break;
@@ -62,7 +76,30 @@ export default function App({ Component, pageProps }) {
     });
 
     return () => subscription.unsubscribe();
-  }, [alarms, setAlarms, setSession, setUser]);
+  }, [setAlarms, setSession, setUser, setSchedules, setCurrentScheduleId, currentScheduleId]);
+
+  // Separate effect to handle alarm fetching when schedule changes
+  useEffect(() => {
+    const fetchAlarms = async () => {
+      if (session?.user?.id && currentScheduleId) {
+        try {
+          const response = await fetch('/api/alarms', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: session.user.id, schedule_id: currentScheduleId }),
+          });
+          const data = await response.json();
+          if (response.ok) {
+            setAlarms(data);
+          }
+        } catch (error) {
+          console.error('Failed to fetch alarms:', error);
+        }
+      }
+    };
+
+    fetchAlarms();
+  }, [currentScheduleId, session?.user?.id, setAlarms]);
 
   return(
   <Container fluid className="p-0 bg-light d-flex flex-column" style={{ minHeight: "100vh" }}>

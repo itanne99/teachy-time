@@ -10,11 +10,17 @@ export const NavBar = ({ useStore }) => {
   const router = useRouter();
   const currentPath = router.asPath;
   const session = useStore((state) => state.session);
+  const schedules = useStore((state) => state.schedules);
+  const currentScheduleId = useStore((state) => state.currentScheduleId);
+  const setCurrentScheduleId = useStore((state) => state.setCurrentScheduleId);
+
+  const currentSchedule = schedules.find(s => s.id === currentScheduleId);
 
   const pages = [
     { name: 'Home', path: '/', type: 'link' },
     { name: 'View', path: '/ViewAlarms', type: 'link' },
     { name: 'Edit', path: '/EditAlarms', type: 'link' },
+    { name: 'Schedules', path: '/Schedules', type: 'link' },
   ]
 
   const handleLogout = async () => {
@@ -22,24 +28,49 @@ export const NavBar = ({ useStore }) => {
     router.push('/');
   };
 
+  const handleScheduleSelect = (id) => {
+    setCurrentScheduleId(id);
+  };
+
   const displayLoginOrProfile = () => {
     if (session) {
       return (
-        <Dropdown as={Nav.Item}>
-          <Dropdown.Toggle as={Nav.Link} style={{padding: 0, margin: 0}}>
-            <PersonCircle size={24} />
-          </Dropdown.Toggle>
-          <Dropdown.Menu align="end">
-            <Dropdown.Item as={Link} href="/Profile">Profile</Dropdown.Item>
-            <Dropdown.Divider />
-            <Dropdown.Item as={Button} onClick={handleLogout}>Logout</Dropdown.Item>
-          </Dropdown.Menu>
-        </Dropdown>
+        <div className="d-flex align-items-center">
+          {schedules.length > 0 && (
+            <Dropdown as={Nav.Item} className="me-3">
+              <Dropdown.Toggle as={Button} variant="outline-light" size="sm">
+                {currentSchedule ? currentSchedule.name : 'Select Schedule'}
+              </Dropdown.Toggle>
+              <Dropdown.Menu>
+                {schedules.map((schedule) => (
+                  <Dropdown.Item 
+                    key={schedule.id} 
+                    active={schedule.id === currentScheduleId}
+                    onClick={() => handleScheduleSelect(schedule.id)}
+                  >
+                    {schedule.name}
+                  </Dropdown.Item>
+                ))}
+              </Dropdown.Menu>
+            </Dropdown>
+          )}
+          <Dropdown as={Nav.Item}>
+            <Dropdown.Toggle as={Nav.Link} style={{padding: 0, margin: 0}}>
+              <PersonCircle size={24} />
+            </Dropdown.Toggle>
+            <Dropdown.Menu align="end">
+              <Dropdown.Item as={Link} href="/Profile">Profile</Dropdown.Item>
+              <Dropdown.Divider />
+              <Dropdown.Item as={Button} onClick={handleLogout}>Logout</Dropdown.Item>
+            </Dropdown.Menu>
+          </Dropdown>
+        </div>
       );
     } else {
       return <ProfileDropdown useStore={useStore} />;
     }
   }
+
 
   return (
     <Navbar expand="lg" className="bg-body-tertiary bg-dark" data-bs-theme="dark">
