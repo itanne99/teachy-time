@@ -1,5 +1,5 @@
 import { NavBar } from "@/components/NavBar/NavBar";
-import "bootswatch/dist/litera/bootstrap.min.css";
+import "@/styles/litera-bootstrap.css"
 import { Container } from "react-bootstrap";
 import { useEffect } from "react";
 import supabase from "@/supabase/component";
