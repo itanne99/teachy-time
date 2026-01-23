@@ -37,7 +37,7 @@ function UpcomingAlarmList({alarms, className}) {
       <Stack direction="vertical" gap={2} style={{ overflowY: 'auto' }} className='px-3 pb-3 flex-grow-1'>
         {filteredAlarms.length === 0 ? (
           <Card.Body className="text-center py-5">
-            <p className="text-muted">No more alarms for today.</p>
+            <p className="text-muted">No more timers for today.</p>
           </Card.Body>
         ) : (
             filteredAlarms.map((alarm) => (

@@ -58,7 +58,7 @@ export default function EditAlarms({ useStore }) {
     const newAlarm = {
       start_time: "00:00", // Changed from 'time'
       end_time: "00:00",   // Added new field
-      label: "New Alarm",
+      label: "New Timer",
     };
     setEditingAlarm(newAlarm);
     setValidationError(null);
@@ -283,8 +283,8 @@ export default function EditAlarms({ useStore }) {
           setConfirmCopy((prev) => ({ ...prev, [pendingCopy?.toDay]: null }));
         }}
         onConfirm={() => performCopy(pendingCopy.fromDay, pendingCopy.toDay)}
-        title="Overwrite Alarms?"
-        message={`Are you sure you want to overwrite the existing alarms for ${pendingCopy?.toDay}? This action cannot be undone.`}
+        title="Overwrite Timers?"
+        message={`Are you sure you want to overwrite the existing timers for ${pendingCopy?.toDay}? This action cannot be undone.`}
       />
       {/* Day selection tabs */}
       <Tabs id="day-tabs" activeKey={activeDay} onSelect={(k) => setActiveDay(k)} className="mb-3 justify-content-center">
@@ -295,11 +295,11 @@ export default function EditAlarms({ useStore }) {
 
       <Row className="align-items-center mb-3">
         <Col>
-          <h2>{activeDay} Alarms</h2>
+          <h2>{activeDay} Timers</h2>
         </Col>
         <Col xs="auto">
           <Button variant="success" onClick={handleAddAlarm}>
-            Add Alarm
+            Add Timer
           </Button>
         </Col>
       </Row>
@@ -333,7 +333,7 @@ export default function EditAlarms({ useStore }) {
       {/* Copy alarms functionality */}
       <Row className="align-items-center border-top pt-3">
         <Col>
-          <h3>Copy Alarms to...</h3>
+          <h3>Copy Timers to...</h3>
         </Col>
         <Col xs="auto">
           {daysOfWeek

@@ -29,7 +29,7 @@ export default async function handler(req, res) {
         .eq('end_time', alarmIdentifier.end_time)   // Use end_time
         .eq('user_id', user_id);
     } else {
-      return { data: null, error: { message: 'Invalid alarm identifier provided.' } };
+      return { data: null, error: { message: 'Invalid timer identifier provided.' } };
     }
     const { data, error } = await queryBuilder.single();
     return { data, error };
@@ -148,7 +148,7 @@ export default async function handler(req, res) {
           return;
         }
         if (hasOverlap) {
-          res.status(409).json({ error: 'An alarm already overlaps with the specified start and end times for this user on this day.' });
+          res.status(409).json({ error: 'A timer already overlaps with the specified start and end times for this user on this day.' });
           return;
         }
 
@@ -180,7 +180,7 @@ export default async function handler(req, res) {
       try {
         const { id, start_time, end_time, label } = body;
         if (!id) {
-          res.status(400).json({ error: 'Alarm ID is required.' });
+          res.status(400).json({ error: 'Timer ID is required.' });
           return;
         }
 
@@ -188,7 +188,7 @@ export default async function handler(req, res) {
 
         if (alarmToUpdateError) {
           if (alarmToUpdateError.code === 'PGRST116') { // No rows found
-            res.status(404).json({ error: 'Alarm not found.' });
+            res.status(404).json({ error: 'Timer not found.' });
             return;
           }
           console.error('Supabase error:', alarmToUpdateError);
@@ -234,7 +234,7 @@ export default async function handler(req, res) {
             return;
           }
           if (hasOverlap) {
-            res.status(409).json({ error: 'The updated alarm times overlap with an existing alarm for this user on this day.' });
+            res.status(409).json({ error: 'The updated timer times overlap with an existing timer for this user on this day.' });
             return;
           }
         }
@@ -268,7 +268,7 @@ export default async function handler(req, res) {
 
           if (alarmToDeleteError) {
             if (alarmToDeleteError.code === 'PGRST116') { // No rows found
-              res.status(404).json({ error: 'Alarm not found.' });
+              res.status(404).json({ error: 'Timer not found.' });
               return;
             }
             console.error('Supabase error:', alarmToDeleteError);
@@ -306,7 +306,7 @@ export default async function handler(req, res) {
           return;
         }
 
-        res.status(400).json({ error: 'Alarm ID or User ID and Day of Week are required.' });
+        res.status(400).json({ error: 'Timer ID or User ID and Day of Week are required.' });
       } catch (error) {
         res.status(500).json({ error: 'An unexpected error occurred.', details: error.message });
       }

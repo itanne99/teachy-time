@@ -56,8 +56,8 @@ export default function App({ useStore }) {
                 <div className="mb-3 text-success">
                   <CalendarWeek size={48} />
                 </div>
-                <h3 className="h4 fw-bold">Flexible Scheduling</h3>
-                <p className="text-muted">Easily create and manage alarms for every day of the week, tailored to your unique teaching blocks.</p>
+                 <h3 className="h4 fw-bold">Flexible Scheduling</h3>
+                <p className="text-muted">Easily create and manage timers for every day of the week, tailored to your unique teaching blocks.</p>
               </Card.Body>
             </Card>
           </Col>
@@ -102,7 +102,7 @@ export default function App({ useStore }) {
               <Card className="h-100 border-0 shadow-sm">
                 <Card.Body className="d-flex flex-column">
                   <h4 className="fw-bold mb-3">View Schedule</h4>
-                  <p className="text-muted flex-grow-1">See your full lineup of alarms and transitions for the entire week.</p>
+                  <p className="text-muted flex-grow-1">See your full lineup of timers and transitions for the entire week.</p>
                   <Link href="/ViewAlarms" passHref legacyBehavior>
                     <Button variant="outline-primary" className="mt-3">Open Weekly View</Button>
                   </Link>
@@ -112,10 +112,10 @@ export default function App({ useStore }) {
             <Col md={6}>
               <Card className="h-100 border-0 shadow-sm">
                 <Card.Body className="d-flex flex-column">
-                  <h4 className="fw-bold mb-3">Manage Alarms</h4>
-                  <p className="text-muted flex-grow-1">Add new alarms, edit existing ones, or sync your schedule across days.</p>
+                  <h4 className="fw-bold mb-3">Manage Timers</h4>
+                  <p className="text-muted flex-grow-1">Add new timers, edit existing ones, or sync your schedule across days.</p>
                   <Link href="/EditAlarms" passHref legacyBehavior>
-                    <Button variant="outline-primary" className="mt-3">Edit Alarms</Button>
+                    <Button variant="outline-primary" className="mt-3">Edit Timers</Button>
                   </Link>
                 </Card.Body>
               </Card>

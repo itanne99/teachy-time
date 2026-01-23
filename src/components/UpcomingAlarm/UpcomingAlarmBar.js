@@ -8,7 +8,7 @@ function UpcomingAlarmBar({ alarms }) {
   const [segmentDuration, setSegmentDuration] = useState(0); // Total duration of the current active segment in seconds
   const [timeLeftInCurrentSegment, setTimeLeftInCurrentSegment] = useState(0); // Time left until current segment ends in seconds
   const [timeUntilNextAlarm, setTimeUntilNextAlarm] = useState(0); // Time left until next segment starts in seconds
-  const [currentAlarmLabel, setCurrentAlarmLabel] = useState("No alarms for today");
+  const [currentAlarmLabel, setCurrentAlarmLabel] = useState("No timers for today");
   const [progressPercentage, setProgressPercentage] = useState(0); // Single percentage for the bar
   const [barVariant, setBarVariant] = useState("secondary"); // Variant for the single bar
 
@@ -96,12 +96,12 @@ function UpcomingAlarmBar({ alarms }) {
               lastAlarmEndTime.setDate(lastAlarmEndTime.getDate() + 1);
           }
           if (now > lastAlarmEndTime) {
-            setCurrentAlarmLabel(`After last alarm: ${lastAlarmOfDay.label}`);
+            setCurrentAlarmLabel(`After last timer: ${lastAlarmOfDay.label}`);
           } else {
-            setCurrentAlarmLabel("No alarms for today"); // Fallback if logic doesn't catch it
+            setCurrentAlarmLabel("No timers for today"); // Fallback if logic doesn't catch it
           }
         } else {
-          setCurrentAlarmLabel("No alarms for today");
+          setCurrentAlarmLabel("No timers for today");
         }
         setSegmentDuration(0);
       }
@@ -220,13 +220,13 @@ function UpcomingAlarmBar({ alarms }) {
       <div className="mt-4">
         {currentAlarm ? (
           <>
-            <h4 className="text-muted mb-2">{nextAlarm ? `Next: ${nextAlarm.label} (${CommonUtils.formatTime(nextAlarm.start_time)})` : "Final Alarm for Today!"}</h4>
+            <h4 className="text-muted mb-2">{nextAlarm ? `Next: ${nextAlarm.label} (${CommonUtils.formatTime(nextAlarm.start_time)})` : "Final Timer for Today!"}</h4>
             <h2 className="display-1 fw-bold font-monospace">{formatTimeLeft(timeLeftInCurrentSegment)}</h2>
           </>
         ) : (
           // No current active alarm
           <>
-            <h4 className="text-muted mb-2">{nextAlarm ? `Next: ${nextAlarm.label} (${CommonUtils.formatTime(nextAlarm.start_time)})` : "No upcoming alarms for today."}</h4>
+            <h4 className="text-muted mb-2">{nextAlarm ? `Next: ${nextAlarm.label} (${CommonUtils.formatTime(nextAlarm.start_time)})` : "No upcoming timers for today."}</h4>
             {nextAlarm && (
                 <h2 className="display-1 fw-bold font-monospace">{formatTimeLeft(timeUntilNextAlarm)}</h2>
             )}
