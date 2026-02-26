@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Card, Stack } from 'react-bootstrap'
 import CommonUtils from '@/services/CommonUtils'
 
-function UpcomingAlarmList({alarms}) {
+function UpcomingAlarmList({alarms, className}) {
   const [filteredAlarms, setFilteredAlarms] = useState([]);
 
   useEffect(() => {
@@ -30,24 +30,26 @@ function UpcomingAlarmList({alarms}) {
   }, [alarms]);
 
   return (
-    <Card style={{ width: '100%', height: '50vh' }}>
-      <Card.Header className="text-center bg-primary text-white">
-        <h4>Upcoming Alarms</h4>
+    <Card className={`border-0 shadow-sm d-flex flex-column ${className}`} style={{ width: '100%' }}>
+      <Card.Header className="bg-white border-0 py-3 flex-shrink-0">
+        <h4 className="fw-bold mb-0">Upcoming Today</h4>
       </Card.Header>
-      <Stack direction="vertical" gap={0} style={{ overflowY: 'auto', height: '100%' }} className='p-5 align-items-center'>
+      <Stack direction="vertical" gap={2} style={{ overflowY: 'auto' }} className='px-3 pb-3 flex-grow-1'>
         {filteredAlarms.length === 0 ? (
-          <Card.Body className="text-center">
-            <p>No upcoming alarms.</p>
+          <Card.Body className="text-center py-5">
+            <p className="text-muted">No more timers for today.</p>
           </Card.Body>
         ) : (
             filteredAlarms.map((alarm) => (
-              <Card.Body key={alarm.id} style={{width: '50%', height: '25%'}} className=" d-flex flex-column align-items-center justify-content-center rounded bg-primary bg-opacity-10 border-bottom">
-                <div className='text-center' style={{ width: '100%' }}>
-                  <strong>{CommonUtils.formatTime(alarm.start_time)} - {CommonUtils.formatTime(alarm.end_time)}</strong> {/* Display start and end time */}
-                  <br />
-                  {alarm.label || 'No Label'}
-                </div>
-              </Card.Body>
+              <Card key={alarm.id} className="border-0 bg-primary bg-opacity-10">
+                <Card.Body className="py-2 px-3">
+                  <div className='d-flex justify-content-between align-items-center'>
+                    <div className="fw-bold text-primary">{CommonUtils.formatTime(alarm.start_time)}</div>
+                    <div className="text-muted small">{CommonUtils.formatTime(alarm.end_time)}</div>
+                  </div>
+                  <div className="fw-semibold mt-1">{alarm.label || 'No Label'}</div>
+                </Card.Body>
+              </Card>
             ))
         )}
       </Stack>

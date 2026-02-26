@@ -3,16 +3,20 @@ import { Container, Row, Col, Button, Tabs, Tab, Table } from "react-bootstrap";
 import { useReactTable, getCoreRowModel, getSortedRowModel } from "@tanstack/react-table";
 import CommonUtils from "@/services/CommonUtils";
 import { AlterAlarm } from "@/components/models/AlterAlarm";
+import { ConfirmModal } from "@/components/models/ConfirmModal";
 
 export default function EditAlarms({ useStore }) {
   const [activeDay, setActiveDay] = useState("");
   const alarms = useStore((state) => state.alarms);
   const setAlarms = useStore((state) => state.setAlarms);
   const user = useStore((state) => state.user);
+  const currentScheduleId = useStore((state) => state.currentScheduleId);
   const [sorting, setSorting] = React.useState([{ id: "start_time", desc: false }]); // Initialize sorting by start_time
   const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
   const [showModal, setShowModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [pendingCopy, setPendingCopy] = useState(null); // { fromDay, toDay }
   const [editingAlarm, setEditingAlarm] = useState(null);
   const [validationError, setValidationError] = useState(null);
   const [confirmCopy, setConfirmCopy] = useState({}); // State to manage confirmation for copying
@@ -23,16 +27,16 @@ export default function EditAlarms({ useStore }) {
     setActiveDay(CommonUtils.getCurrentDay());
   }, []);
 
-  // Fetch alarms when user is available
+  // Fetch alarms when user or currentScheduleId changes
   useEffect(() => {
     const fetchAlarms = async () => {
-      if (user?.id) {
+      if (user?.id && currentScheduleId) {
         setLoading(true);
         try {
           const response = await fetch("/api/alarms", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ user_id: user.id }),
+            body: JSON.stringify({ user_id: user.id, schedule_id: currentScheduleId }),
           });
           const data = await response.json();
           if (response.ok) {
@@ -48,14 +52,14 @@ export default function EditAlarms({ useStore }) {
       }
     };
     fetchAlarms();
-  }, [setAlarms]);
+  }, [setAlarms, user, currentScheduleId]);
 
   // Function to add a new alarm to the active day
   const handleAddAlarm = () => {
     const newAlarm = {
       start_time: "00:00", // Changed from 'time'
       end_time: "00:00",   // Added new field
-      label: "New Alarm",
+      label: "New Timer",
     };
     setEditingAlarm(newAlarm);
     setValidationError(null);
@@ -102,6 +106,7 @@ export default function EditAlarms({ useStore }) {
       : {
           ...alarmToSave,
           user_id: user.id,
+          schedule_id: currentScheduleId,
           day_of_week: daysOfWeek.indexOf(activeDay),
         };
 
@@ -139,15 +144,30 @@ export default function EditAlarms({ useStore }) {
     }
   };
 
-  // Function to copy alarms from one day to another
-  const handleCopyAlarms = async (fromDay, toDay) => {
-    if (confirmCopy[toDay] === "confirm") {
-      // Second click: perform the copy
-      setLoading(true);
-      const alarmsToCopy = alarms[fromDay] || [];
-      const toDayIndex = daysOfWeek.indexOf(toDay);
-      const copiedAlarms = [];
+  const performCopy = async (fromDay, toDay) => {
+    setLoading(true);
+    const alarmsToCopy = alarms[fromDay] || [];
+    const toDayIndex = daysOfWeek.indexOf(toDay);
 
+    try {
+      // Delete existing alarms on the target day first
+      const deleteResponse = await fetch("/api/alarms", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: user.id,
+          schedule_id: currentScheduleId,
+          day_of_week: toDayIndex,
+        }),
+      });
+
+      if (!deleteResponse.ok) {
+        console.error(`Failed to delete existing alarms for ${toDay}`);
+        setLoading(false);
+        return;
+      }
+
+      const copiedAlarms = [];
       for (const alarm of alarmsToCopy) {
         try {
           const response = await fetch("/api/alarms", {
@@ -155,9 +175,10 @@ export default function EditAlarms({ useStore }) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               user_id: user.id,
+              schedule_id: currentScheduleId,
               day_of_week: toDayIndex,
-              start_time: alarm.start_time, // Changed from 'time'
-              end_time: alarm.end_time,     // Added new field
+              start_time: alarm.start_time,
+              end_time: alarm.end_time,
               label: alarm.label,
             }),
           });
@@ -171,14 +192,34 @@ export default function EditAlarms({ useStore }) {
       }
 
       setAlarms({ ...alarms, [toDay]: copiedAlarms });
+    } catch (error) {
+      console.error(`Error in copy process:`, error);
+    } finally {
       setLoading(false);
       setConfirmCopy((prev) => ({ ...prev, [toDay]: "copied" }));
       setTimeout(() => setConfirmCopy((prev) => ({ ...prev, [toDay]: null })), 3000);
+      setShowConfirmModal(false);
+      setPendingCopy(null);
+    }
+  };
+
+  // Function to copy alarms from one day to another
+  const handleCopyAlarms = async (fromDay, toDay) => {
+    if (confirmCopy[toDay] === "confirm") {
+      // Second click: perform the copy
+      const targetAlarms = alarms[toDay] || [];
+      if (targetAlarms.length > 0) {
+        setPendingCopy({ fromDay, toDay });
+        setShowConfirmModal(true);
+      } else {
+        await performCopy(fromDay, toDay);
+      }
     } else {
       // First click: ask for confirmation
       setConfirmCopy((prev) => ({ ...prev, [toDay]: "confirm" }));
     }
   };
+
 
   // Define columns for TanStack Table
   const columns = useMemo(
@@ -239,6 +280,16 @@ export default function EditAlarms({ useStore }) {
   return (
     <Container className="py-4">
       <AlterAlarm show={showModal} onHide={() => setShowModal(false)} onSave={handleSaveAlarm} alarm={editingAlarm} day={activeDay} validationError={validationError} />
+      <ConfirmModal
+        show={showConfirmModal}
+        onHide={() => {
+          setShowConfirmModal(false);
+          setConfirmCopy((prev) => ({ ...prev, [pendingCopy?.toDay]: null }));
+        }}
+        onConfirm={() => performCopy(pendingCopy.fromDay, pendingCopy.toDay)}
+        title="Overwrite Timers?"
+        message={`Are you sure you want to overwrite the existing timers for ${pendingCopy?.toDay}? This action cannot be undone.`}
+      />
       {/* Day selection tabs */}
       <Tabs id="day-tabs" activeKey={activeDay} onSelect={(k) => setActiveDay(k)} className="mb-3 justify-content-center">
         {daysOfWeek.map((day) => (
@@ -248,11 +299,11 @@ export default function EditAlarms({ useStore }) {
 
       <Row className="align-items-center mb-3">
         <Col>
-          <h2>{activeDay} Alarms</h2>
+          <h2>{activeDay} Timers</h2>
         </Col>
         <Col xs="auto">
           <Button variant="success" onClick={handleAddAlarm}>
-            Add Alarm
+            Add Timer
           </Button>
         </Col>
       </Row>
@@ -286,7 +337,7 @@ export default function EditAlarms({ useStore }) {
       {/* Copy alarms functionality */}
       <Row className="align-items-center border-top pt-3">
         <Col>
-          <h3>Copy Alarms to...</h3>
+          <h3>Copy Timers to...</h3>
         </Col>
         <Col xs="auto">
           {daysOfWeek

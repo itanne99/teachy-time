@@ -25,7 +25,7 @@ export const AlterAlarm = ({ show, onHide, onSave, alarm, day, validationError }
   return (
     <Modal show={show} onHide={onHide} centered>
       <Modal.Header closeButton>
-        <Modal.Title>{currentAlarm?.id ? 'Edit Alarm' : 'Add Alarm'} for {day}</Modal.Title>
+        <Modal.Title>{currentAlarm?.id ? 'Edit Timer' : 'Add Timer'} for {day}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         {validationError && <Alert variant="danger">{validationError}</Alert>}
@@ -50,7 +50,7 @@ export const AlterAlarm = ({ show, onHide, onSave, alarm, day, validationError }
             <Form.Label>Label</Form.Label>
             <Form.Control
               type="text"
-              placeholder="Enter alarm label"
+              placeholder="Enter timer label"
               value={currentAlarm?.label || ''}
               onChange={(e) => handleChange('label', e.target.value)}
             />
