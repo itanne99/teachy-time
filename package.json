@@ -18,6 +18,7 @@
     "bootswatch": "^5.3.7",
     "next": "15.5.9",
     "react": "19.1.0",
+    "react-audio-player": "^0.17.0",
     "react-bootstrap": "^2.10.10",
     "react-bootstrap-icons": "^1.11.6",
     "react-dom": "19.1.0",
