@@ -3,7 +3,7 @@
 {
 	"name": "Teachy Time Dev Container",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+	"image": "mcr.microsoft.com/devcontainers/base:noble",
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	"features": {

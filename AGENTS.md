@@ -1,6 +1,6 @@
 # Agent Instructions & Project Conventions
 
-**Project:** Gabay Estate Management Frontend
+**Project:** Teachy Time
 **Stack:** React 19, Next.js 16, JavaScript (ESM)
 
 This document provides definitive instructions for AI coding agents operating within this repository. Adhering to these guidelines ensures consistency, maintainability, and alignment with existing project conventions. 
@@ -11,7 +11,7 @@ There are currently no existing `.cursorrules` or `.github/copilot-instructions.
 
 ## 1. Build, Lint, and Test Commands
 
-All scripts must be executed from within the `gabay-estate-management-nextjs` directory. Navigate to this directory using the `workdir` parameter or execute commands with the correct path.
+Navigate to this directory using the `workdir` parameter or execute commands with the correct path.
 
 ### Build Commands
 - **Install Dependencies:** `yarn install`
@@ -114,7 +114,7 @@ async function loadProperties() {
 ```
 
 ### 2.8. File & Folder Structure
-Adhere strictly to the existing directory architecture inside `gabay-estate-management-nextjs/src`:
+Adhere strictly to the existing directory architecture inside `src`:
 - `/components`: Reusable UI components.
 - `/pages`: Next.js pages (using Pages Router).
 - `/hooks`: Custom React hooks.
