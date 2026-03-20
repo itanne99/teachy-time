@@ -21,4 +21,8 @@ export const useStore = create((set) => ({
   setSession: (session) => set({ session }),
   passwordResetFlag: null,
   setPasswordResetFlag: (flag) => set({ passwordResetFlag: flag }),
+  audioSrc: "https://mgsqrwnwppjmijenbfys.supabase.co/storage/v1/object/public/chimes/public/wind-chimes-37762.mp3",
+  setAudioSrc: (src) => set({ audioSrc: src }),
+  isPlaying: false,
+  setIsPlaying: (playing) => set({ isPlaying: playing }),
 }));

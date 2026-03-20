@@ -106,7 +106,7 @@ export default function App({ Component, pageProps }) {
   <Container fluid className="p-0 bg-light d-flex flex-column" style={{ minHeight: "100vh" }}>
     <NavBar useStore={useStore} />
     <Component {...pageProps} useStore={useStore} />
-    <AudioPlayer src="https://mgsqrwnwppjmijenbfys.supabase.co/storage/v1/object/public/chimes/public/wind-chimes-37762.mp3" />
+    <AudioPlayer />
     <SpeedInsights/>
     <Analytics/>
   </Container>);
