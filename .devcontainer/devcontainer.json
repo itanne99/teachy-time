@@ -10,7 +10,7 @@
 		"ghcr.io/devcontainers/features/node:1.7.1": {},
 		"ghcr.io/devcontainers/features/git-lfs:1": {},
 		"ghcr.io/devcontainers/features/github-cli:1": {},
-		"ghcr.io/jsburckhardt/devcontainer-features/opencode:1": {}
+		"ghcr.io/jsburckhardt/devcontainer-features/opencode:1": { "version": "1.2.26" }
 	},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
