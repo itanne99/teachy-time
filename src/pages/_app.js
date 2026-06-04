@@ -1,4 +1,5 @@
 import { NavBar } from "@/components/NavBar/NavBar";
+import { AudioPlayer } from "@/components/AudioPlayer/AudioPlayer";
 import "@/styles/litera-bootstrap.css"
 import { Container } from "react-bootstrap";
 import { useEffect } from "react";
@@ -105,6 +106,7 @@ export default function App({ Component, pageProps }) {
   <Container fluid className="p-0 bg-light d-flex flex-column" style={{ minHeight: "100vh" }}>
     <NavBar useStore={useStore} />
     <Component {...pageProps} useStore={useStore} />
+    <AudioPlayer />
     <SpeedInsights/>
     <Analytics/>
   </Container>);

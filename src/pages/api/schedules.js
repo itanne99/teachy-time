@@ -1,19 +1,31 @@
 import createClient from "@/supabase/api";
 
+async function getAuthUserId(req, res) {
+  const supabase = createClient(req, res);
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) {
+    return { userId: null, error: 'Unauthorized' };
+  }
+  return { userId: user.id, error: null };
+}
+
 export default async function handler(req, res) {
   const { method, body } = req;
   const supabase = createClient(req, res);
 
-  switch (method) {
-    case 'POST': // Fetch all schedules for a user
-      try {
-        const { user_id } = body;
-        if (!user_id) return res.status(400).json({ error: 'User ID is required.' });
+  const { userId, error: authError } = await getAuthUserId(req, res);
+  if (authError) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
 
+  switch (method) {
+    case 'POST':
+      try {
         const { data, error } = await supabase
           .from('schedules')
           .select('*')
-          .eq('user_id', user_id)
+          .eq('user_id', userId)
           .order('name', { ascending: true });
 
         if (error) throw error;
@@ -23,14 +35,14 @@ export default async function handler(req, res) {
       }
       break;
 
-    case 'PUT': // Create a new schedule
+    case 'PUT':
       try {
-        const { user_id, name } = body;
-        if (!user_id || !name) return res.status(400).json({ error: 'User ID and Name are required.' });
+        const { name } = body;
+        if (!name) return res.status(400).json({ error: 'Name is required.' });
 
         const { data, error } = await supabase
           .from('schedules')
-          .insert([{ user_id, name }])
+          .insert([{ user_id: userId, name }])
           .select()
           .single();
 
@@ -41,10 +53,29 @@ export default async function handler(req, res) {
       }
       break;
 
-    case 'PATCH': // Rename a schedule
+    case 'PATCH':
       try {
         const { id, name } = body;
         if (!id || !name) return res.status(400).json({ error: 'ID and Name are required.' });
+
+        const { data: existingSchedule, error: fetchError } = await supabase
+          .from('schedules')
+          .select('user_id')
+          .eq('id', id)
+          .single();
+
+        if (fetchError) {
+          if (fetchError.code === 'PGRST116') {
+            res.status(404).json({ error: 'Schedule not found.' });
+            return;
+          }
+          throw fetchError;
+        }
+
+        if (existingSchedule.user_id !== userId) {
+          res.status(403).json({ error: 'Forbidden: You do not own this schedule.' });
+          return;
+        }
 
         const { data, error } = await supabase
           .from('schedules')
@@ -60,19 +91,30 @@ export default async function handler(req, res) {
       }
       break;
 
-    case 'DELETE': // Delete a schedule
+    case 'DELETE':
       try {
         const { id } = body;
         if (!id) return res.status(400).json({ error: 'ID is required.' });
 
-        // Check if it's the "Main" schedule
         const { data: schedule, error: fetchError } = await supabase
           .from('schedules')
-          .select('name')
+          .select('user_id, name')
           .eq('id', id)
           .single();
 
-        if (fetchError) throw fetchError;
+        if (fetchError) {
+          if (fetchError.code === 'PGRST116') {
+            res.status(404).json({ error: 'Schedule not found.' });
+            return;
+          }
+          throw fetchError;
+        }
+
+        if (schedule.user_id !== userId) {
+          res.status(403).json({ error: 'Forbidden: You do not own this schedule.' });
+          return;
+        }
+
         if (schedule.name.toLowerCase() === 'main') {
           return res.status(403).json({ error: 'Cannot delete the Main schedule.' });
         }
