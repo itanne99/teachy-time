@@ -43,10 +43,10 @@ function UpcomingAlarmList({alarms, className}) {
     <Card className={`border-0 shadow-sm d-flex flex-column ${className}`} style={{ width: '100%' }}>
       <Card.Header className="bg-white border-0 py-3 flex-shrink-0">
         <div className="d-flex align-items-center justify-content-between">
-          <h5 className="fw-bold mb-0">
-            <Clock className="me-2" size={18} />
-            Upcoming Today
-          </h5>
+          <div className="d-flex align-items-center">
+            <Clock className="me-2" size={18} style={{ marginTop: "-2px" }} />
+            <h5 className="fw-bold mb-0">Upcoming Today</h5>
+          </div>
           <Badge bg="light" text="dark" pill>{filteredAlarms.length}</Badge>
         </div>
       </Card.Header>
@@ -60,10 +60,10 @@ function UpcomingAlarmList({alarms, className}) {
             filteredAlarms.map((alarm, index) => (
               <Card 
                 key={alarm.id} 
-                className={`border ${index === 0 ? 'border-primary border-2' : 'border-secondary'}`}
+                className={`border ${index === 0 ? 'border-primary border-2' : 'border-secondary'} rounded`}
                 style={{ transition: 'all 200ms ease' }}
               >
-                <Card.Body className="py-2 px-3 bg-light">
+                <Card.Body className="py-2 px-3" style={{ backgroundColor: "var(--bs-light)" }}>
                   {index === 0 && (
                     <Badge bg="primary" pill className="mb-2" style={{ fontSize: '0.65rem' }}>
                       <ArrowRight size={10} className="me-1" />

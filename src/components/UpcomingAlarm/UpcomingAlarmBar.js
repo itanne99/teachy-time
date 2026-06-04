@@ -231,38 +231,37 @@ function UpcomingAlarmBar({ alarms }) {
   };
 
   return (
-    <div className="upcoming-alarm-bar w-100">
-      <div className="text-white p-4 pb-3" style={{ background: getHeaderGradient(), borderRadius: "var(--tt-radius-lg) var(--tt-radius-lg) 0 0" }}>
+    <div className="upcoming-alarm-bar w-100 shadow-sm" style={{ borderRadius: "var(--tt-radius-lg)", overflow: "hidden" }}>
+      <div className="text-white p-4 pb-2" style={{ background: getHeaderGradient() }}>
         <div className="d-flex align-items-center justify-content-between mb-2">
-          <h5 className="mb-0 fw-semibold opacity-75">
+          <h5 className="mb-0 fw-semibold opacity-75 d-flex align-items-center">
             {currentAlarm ? <HourglassSplit className="me-2" size={20} /> : <Clock className="me-2" size={20} />}
             Timer Status
           </h5>
           {getStatusBadge()}
         </div>
-        <h2 className="fw-bold mb-0">{currentAlarmLabel}</h2>
-      </div>
-
-      <div className="bg-white p-4 pt-0" style={{ borderRadius: "0 0 var(--tt-radius-lg) var(--tt-radius-lg)", border: "1px solid rgba(0,0,0,0.06)", borderTop: "none" }}>
-        <ProgressBar style={{ height: "1.5rem", transform: "scaleX(-1)", borderRadius: "var(--tt-radius-md)" }} className="mb-3">
+        <h2 className="fw-bold mb-3">{currentAlarmLabel}</h2>
+        <ProgressBar style={{ height: "1rem", transform: "scaleX(-1)", borderRadius: "var(--tt-radius-sm)" }}>
           <ProgressBar animated variant={barVariant} now={progressPercentage} key={1} />
         </ProgressBar>
+      </div>
 
+      <div className="bg-white p-4 pt-3" style={{ borderRadius: "0 0 var(--tt-radius-lg) var(--tt-radius-lg)", border: "1px solid rgba(0,0,0,0.06)", borderTop: "none" }}>
         <div className="text-center">
           {currentAlarm ? (
             <>
-              <div className="text-muted mb-2 small">
+              <div className="text-muted mb-1 small">
                 {nextAlarm ? `Next: ${nextAlarm.label} at ${CommonUtils.formatTime(nextAlarm.start_time)}` : "Final timer for today"}
               </div>
-              <div className="display-4 fw-bold tt-countdown text-dark">{formatTimeLeft(timeLeftInCurrentSegment)}</div>
+              <div className="display-3 fw-bold tt-countdown text-dark">{formatTimeLeft(timeLeftInCurrentSegment)}</div>
             </>
           ) : (
             <>
-              <div className="text-muted mb-2 small">
+              <div className="text-muted mb-1 small">
                 {nextAlarm ? `Starts at ${CommonUtils.formatTime(nextAlarm.start_time)}` : "No upcoming timers"}
               </div>
               {nextAlarm && (
-                <div className="display-4 fw-bold tt-countdown text-dark">{formatTimeLeft(timeUntilNextAlarm)}</div>
+                <div className="display-3 fw-bold tt-countdown text-dark">{formatTimeLeft(timeUntilNextAlarm)}</div>
               )}
             </>
           )}

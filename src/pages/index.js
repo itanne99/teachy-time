@@ -91,11 +91,9 @@ export default function App({ useStore }) {
       <Row className="g-4 align-items-stretch">
         {/* Main Countdown Section */}
         <Col lg={8} className="d-flex flex-column">
-          <Card className="border-0 shadow-sm mb-4 flex-grow-1">
-            <Card.Body className="pt-3 pe-0 pb-0 ps-0 overflow-hidden rounded d-flex flex-column justify-content-center">
-              <UpcomingAlarmBar alarms={todayAlarms} />
-            </Card.Body>
-          </Card>
+          <div className="flex-grow-1">
+            <UpcomingAlarmBar alarms={todayAlarms} />
+          </div>
 
           <Row className="g-4 flex-shrink-0">
             <Col md={6}>
