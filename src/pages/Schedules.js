@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { Container, Table, Button, Form, Modal, Alert, Card } from "react-bootstrap";
+import { Container, Table, Button, Form, Modal, Alert, Card, Badge } from "react-bootstrap";
 import { useStore } from "@/services/useStore";
-import { PlusCircle, PencilSquare, Trash } from "react-bootstrap-icons";
+import { PlusCircle, PencilSquare, Trash2, Calendar3, CheckCircle, CalendarX } from "react-bootstrap-icons";
 
 export default function Schedules() {
   const session = useStore((state) => state.session);
@@ -11,7 +11,7 @@ export default function Schedules() {
   const setCurrentScheduleId = useStore((state) => state.setCurrentScheduleId);
 
   const [showModal, setShowModal] = useState(false);
-  const [modalMode, setModalMode] = useState("add"); // "add" or "edit"
+  const [modalMode, setModalMode] = useState("add");
   const [selectedSchedule, setSelectedSchedule] = useState(null);
   const [scheduleName, setScheduleName] = useState("");
   const [error, setError] = useState(null);
@@ -102,7 +102,6 @@ export default function Schedules() {
       }
 
       if (currentScheduleId === id) {
-        // If deleting the current schedule, switch back to Main
         const main = schedules.find(s => s.name.toLowerCase() === "main");
         if (main) setCurrentScheduleId(main.id);
       }
@@ -117,68 +116,93 @@ export default function Schedules() {
 
   return (
     <Container className="py-4">
-      <Card>
-        <Card.Header className="d-flex justify-content-between align-items-center">
-          <h5 className="mb-0">My Schedules</h5>
+      <Card className="border-0 shadow-sm">
+        <Card.Header className="bg-white border-0 d-flex justify-content-between align-items-center py-3">
+          <div className="d-flex align-items-center gap-2">
+            <Calendar3 size={22} className="text-primary" />
+            <h5 className="fw-bold mb-0">My Schedules</h5>
+          </div>
           <Button variant="primary" size="sm" onClick={handleShowAdd}>
-            <PlusCircle className="me-2" /> Add Schedule
+            <PlusCircle className="me-2" size={16} />
+            Add Schedule
           </Button>
         </Card.Header>
-        <Card.Body>
-          {error && <Alert variant="danger">{error}</Alert>}
-          <Table responsive hover>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Status</th>
-                <th className="text-end">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {schedules.map((schedule) => (
-                <tr key={schedule.id} className={schedule.id === currentScheduleId ? "table-primary" : ""}>
-                  <td className="align-middle">
-                    {schedule.name}
-                    {schedule.name.toLowerCase() === "main" && (
-                      <span className="badge bg-info ms-2">Default</span>
-                    )}
-                  </td>
-                  <td className="align-middle">
-                    {schedule.id === currentScheduleId ? "Active" : ""}
-                  </td>
-                  <td className="text-end">
-                    <Button 
-                      variant="outline-secondary" 
-                      size="sm" 
-                      className="me-2"
-                      onClick={() => handleShowEdit(schedule)}
-                    >
-                      <PencilSquare />
-                    </Button>
-                    {schedule.name.toLowerCase() !== "main" && (
-                      <Button 
-                        variant="outline-danger" 
-                        size="sm"
-                        onClick={() => handleDelete(schedule.id, schedule.name)}
-                      >
-                        <Trash />
-                      </Button>
-                    )}
-                  </td>
+        <Card.Body className="p-0">
+          {error && <Alert variant="danger" className="m-3 mb-0">{error}</Alert>}
+          {schedules.length === 0 ? (
+            <div className="text-center py-5">
+              <CalendarX size={48} className="text-muted mb-3" />
+              <h5 className="fw-bold">No schedules yet</h5>
+              <p className="text-muted mb-4">Create your first schedule to get started.</p>
+            </div>
+          ) : (
+            <Table responsive hover className="mb-0 align-middle">
+              <thead className="bg-light">
+                <tr>
+                  <th style={{ width: "40%" }}>Name</th>
+                  <th style={{ width: "20%" }}>Status</th>
+                  <th className="text-end" style={{ width: "40%" }}>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </Table>
+              </thead>
+              <tbody>
+                {schedules.map((schedule) => (
+                  <tr key={schedule.id} style={schedule.id === currentScheduleId ? { backgroundColor: "var(--bs-primary-bg-subtle)" } : {}}>
+                    <td>
+                      <div className="d-flex align-items-center gap-2">
+                        {schedule.id === currentScheduleId && <CheckCircle size={16} className="text-success flex-shrink-0" />}
+                        <span className="fw-semibold">{schedule.name}</span>
+                        {schedule.name.toLowerCase() === "main" && (
+                          <Badge bg="info">Default</Badge>
+                        )}
+                      </div>
+                    </td>
+                    <td>
+                      {schedule.id === currentScheduleId ? (
+                        <Badge bg="success" pill>Active</Badge>
+                      ) : (
+                        <Badge bg="light" text="dark" pill>Inactive</Badge>
+                      )}
+                    </td>
+                    <td className="text-end">
+                      <div className="d-flex gap-2 justify-content-end">
+                        <Button 
+                          variant="outline-primary" 
+                          size="sm"
+                          onClick={() => handleShowEdit(schedule)}
+                          title="Rename"
+                        >
+                          <PencilSquare size={16} />
+                        </Button>
+                        {schedule.name.toLowerCase() !== "main" && (
+                          <Button 
+                            variant="outline-danger" 
+                            size="sm"
+                            onClick={() => handleDelete(schedule.id, schedule.name)}
+                            title="Delete"
+                          >
+                            <Trash2 size={16} />
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          )}
         </Card.Body>
       </Card>
 
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
+      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
         <Modal.Header closeButton>
-          <Modal.Title>{modalMode === "add" ? "Add New Schedule" : "Rename Schedule"}</Modal.Title>
+          <Modal.Title className="d-flex align-items-center gap-2">
+            <Calendar3 size={20} />
+            {modalMode === "add" ? "Add New Schedule" : "Rename Schedule"}
+          </Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form.Group>
-            <Form.Label>Schedule Name</Form.Label>
+            <Form.Label className="fw-semibold">Schedule Name</Form.Label>
             <Form.Control 
               type="text" 
               value={scheduleName} 
@@ -189,7 +213,7 @@ export default function Schedules() {
           </Form.Group>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
+          <Button variant="outline-secondary" onClick={() => setShowModal(false)}>Cancel</Button>
           <Button variant="primary" onClick={handleSave} disabled={loading}>
             {loading ? "Saving..." : "Save"}
           </Button>
