@@ -244,10 +244,10 @@ export default function EditAlarms({ useStore }) {
         size: "20%",
         cell: ({ row }) => (
           <div className="text-end d-flex gap-2 justify-content-end">
-            <Button variant="outline-primary" size="sm" onClick={() => handleEditAlarm(row.original)} title="Edit">
+            <Button variant="primary" size="sm" onClick={() => handleEditAlarm(row.original)} title="Edit">
               <PencilSquare size={16} />
             </Button>
-            <Button variant="outline-danger" size="sm" onClick={() => removeAlarm(row.original.id)} title="Delete">
+            <Button variant="danger" size="sm" onClick={() => removeAlarm(row.original.id)} title="Delete">
               <Trash2 size={16} />
             </Button>
           </div>
@@ -372,7 +372,7 @@ export default function EditAlarms({ useStore }) {
                   key={day}
                   size="sm"
                   onClick={() => handleCopyAlarms(activeDay, day)}
-                  variant={confirmCopy[day] === "confirm" ? "warning" : confirmCopy[day] === "copied" ? "success" : "outline-secondary"}
+                  variant={confirmCopy[day] === "confirm" ? "warning" : confirmCopy[day] === "copied" ? "success" : "secondary"}
                   disabled={confirmCopy[day] === "copied" || loading}>
                   {confirmCopy[day] === "confirm" ? (
                     <>Confirm {day}?</>
