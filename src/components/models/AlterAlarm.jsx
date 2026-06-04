@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Form, Alert } from 'react-bootstrap';
+import { Modal, Button, Form, Alert, Spinner } from 'react-bootstrap';
+import { Clock, Tag, ExclamationTriangle } from 'react-bootstrap-icons';
 
 export const AlterAlarm = ({ show, onHide, onSave, alarm, day, validationError }) => {
   const [currentAlarm, setCurrentAlarm] = useState(alarm);
@@ -23,34 +24,58 @@ export const AlterAlarm = ({ show, onHide, onSave, alarm, day, validationError }
   };
 
   return (
-    <Modal show={show} onHide={onHide} centered>
+    <Modal show={show} onHide={onHide} centered size="md">
       <Modal.Header closeButton>
-        <Modal.Title>{currentAlarm?.id ? 'Edit Timer' : 'Add Timer'} for {day}</Modal.Title>
+        <Modal.Title className="d-flex align-items-center gap-2">
+          <Clock size={20} />
+          {currentAlarm?.id ? 'Edit Timer' : 'Add Timer'}
+          <span className="text-muted fw-normal fs-6">— {day}</span>
+        </Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        {validationError && <Alert variant="danger">{validationError}</Alert>}
-        <Form onSubmit={ (e) => {handleSave(e);} }>
-          <Form.Group className="mb-3" controlId="formAlarmStartTime">
-            <Form.Label>Start Time</Form.Label>
-            <Form.Control
-              type="time"
-              value={currentAlarm?.start_time || ''}
-              onChange={(e) => handleChange('start_time', e.target.value)}
-            />
-          </Form.Group>
-          <Form.Group className="mb-3" controlId="formAlarmEndTime">
-            <Form.Label>End Time</Form.Label>
-            <Form.Control
-              type="time"
-              value={currentAlarm?.end_time || ''}
-              onChange={(e) => handleChange('end_time', e.target.value)}
-            />
-          </Form.Group>
-          <Form.Group className="mb-3" controlId="formAlarmLabel">
-            <Form.Label>Label</Form.Label>
+        {validationError && (
+          <Alert variant="danger" className="d-flex align-items-start gap-2">
+            <ExclamationTriangle size={18} className="mt-1 flex-shrink-0" />
+            <span>{validationError}</span>
+          </Alert>
+        )}
+        <Form onSubmit={(e) => { handleSave(e); }}>
+          <div className="row g-3">
+            <div className="col-6">
+              <Form.Group controlId="formAlarmStartTime">
+                <Form.Label className="small fw-semibold text-muted">
+                  <Clock size={14} className="me-1" />
+                  Start Time
+                </Form.Label>
+                <Form.Control
+                  type="time"
+                  value={currentAlarm?.start_time || ''}
+                  onChange={(e) => handleChange('start_time', e.target.value)}
+                />
+              </Form.Group>
+            </div>
+            <div className="col-6">
+              <Form.Group controlId="formAlarmEndTime">
+                <Form.Label className="small fw-semibold text-muted">
+                  <Clock size={14} className="me-1" />
+                  End Time
+                </Form.Label>
+                <Form.Control
+                  type="time"
+                  value={currentAlarm?.end_time || ''}
+                  onChange={(e) => handleChange('end_time', e.target.value)}
+                />
+              </Form.Group>
+            </div>
+          </div>
+          <Form.Group className="mt-3" controlId="formAlarmLabel">
+            <Form.Label className="small fw-semibold text-muted">
+              <Tag size={14} className="me-1" />
+              Label
+            </Form.Label>
             <Form.Control
               type="text"
-              placeholder="Enter timer label"
+              placeholder="e.g., Math Lesson, Recess, Lunch"
               value={currentAlarm?.label || ''}
               onChange={(e) => handleChange('label', e.target.value)}
             />
@@ -58,11 +83,18 @@ export const AlterAlarm = ({ show, onHide, onSave, alarm, day, validationError }
         </Form>
       </Modal.Body>
       <Modal.Footer>
-        <Button variant="secondary" onClick={onHide}>
-          Close
+        <Button variant="outline-secondary" onClick={onHide}>
+          Cancel
         </Button>
         <Button variant="primary" onClick={handleSave} disabled={isLoading}>
-          {isLoading ? 'Saving...' : 'Save Changes'}
+          {isLoading ? (
+            <>
+              <Spinner as="span" animation="border" size="sm" className="me-2" />
+              Saving...
+            </>
+          ) : (
+            'Save Changes'
+          )}
         </Button>
       </Modal.Footer>
     </Modal>

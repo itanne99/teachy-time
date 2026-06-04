@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from "react"; // Import useRef
-import { ProgressBar } from "react-bootstrap";
+import React, { useState, useEffect, useRef } from "react";
+import { ProgressBar, Badge } from "react-bootstrap";
 import CommonUtils from "@/services/CommonUtils";
 import { useStore } from "@/services/useStore";
+import { Clock, HourglassSplit, CheckCircle } from "react-bootstrap-icons";
 
 function UpcomingAlarmBar({ alarms }) {
   const setIsPlaying = useStore((state) => state.setIsPlaying);
@@ -10,18 +11,17 @@ function UpcomingAlarmBar({ alarms }) {
 
   const [currentAlarm, setCurrentAlarm] = useState(null);
   const [nextAlarm, setNextAlarm] = useState(null);
-  const [segmentDuration, setSegmentDuration] = useState(0); // Total duration of the current active segment in seconds
-  const [timeLeftInCurrentSegment, setTimeLeftInCurrentSegment] = useState(0); // Time left until current segment ends in seconds
-  const [timeUntilNextAlarm, setTimeUntilNextAlarm] = useState(0); // Time left until next segment starts in seconds
+  const [segmentDuration, setSegmentDuration] = useState(0);
+  const [timeLeftInCurrentSegment, setTimeLeftInCurrentSegment] = useState(0);
+  const [timeUntilNextAlarm, setTimeUntilNextAlarm] = useState(0);
   const [currentAlarmLabel, setCurrentAlarmLabel] = useState("No timers for today");
-  const [progressPercentage, setProgressPercentage] = useState(0); // Single percentage for the bar
-  const [barVariant, setBarVariant] = useState("secondary"); // Variant for the single bar
-  
-  // Tracking the previously active alarm to detect when it ends
-  const lastAlarmIdRef = useRef(null);
-  const endAlarmTimeoutRef = useRef(null); // Ref to store the timeout ID for current alarm's end
+  const [progressPercentage, setProgressPercentage] = useState(0);
+  const [barVariant, setBarVariant] = useState("secondary");
+  const [statusLabel, setStatusLabel] = useState("");
 
-  // Effect 1: Find active and next segments (runs every second and on alarm end)
+  const lastAlarmIdRef = useRef(null);
+  const endAlarmTimeoutRef = useRef(null);
+
   useEffect(() => {
     const findActiveAndNextSegments = () => {
       if (endAlarmTimeoutRef.current) {
@@ -61,19 +61,18 @@ function UpcomingAlarmBar({ alarms }) {
         }
       }
 
-      // TRIGGER LOGIC: Play audio when the PREVIOUS alarm ends
       if (lastAlarmIdRef.current && (!activeSegment || activeSegment.id !== lastAlarmIdRef.current)) {
         setAudioSrc(defaultChime);
         setIsPlaying(true);
       }
 
-      // Update state and tracking ref
       setCurrentAlarm(activeSegment);
       setNextAlarm(nextUpcomingSegment);
       lastAlarmIdRef.current = activeSegment ? activeSegment.id : null;
 
       if (activeSegment) {
         setCurrentAlarmLabel(activeSegment.label);
+        setStatusLabel("Active");
         const [startHour, startMinute] = activeSegment.start_time.split(":").map(Number);
         const [endHour, endMinute] = activeSegment.end_time.split(":").map(Number);
         const segmentStartTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHour, startMinute, 0);
@@ -89,6 +88,7 @@ function UpcomingAlarmBar({ alarms }) {
         }
       } else if (nextUpcomingSegment) {
         setCurrentAlarmLabel(`Upcoming: ${nextUpcomingSegment.label}`);
+        setStatusLabel("Waiting");
         setSegmentDuration(0);
       } else {
         if (sortedAlarms.length > 0) {
@@ -101,12 +101,15 @@ function UpcomingAlarmBar({ alarms }) {
               lastAlarmEndTime.setDate(lastAlarmEndTime.getDate() + 1);
           }
           if (now > lastAlarmEndTime) {
-            setCurrentAlarmLabel(`After last timer: ${lastAlarmOfDay.label}`);
+            setCurrentAlarmLabel(`Day Complete`);
+            setStatusLabel("Complete");
           } else {
             setCurrentAlarmLabel("No timers for today");
+            setStatusLabel("");
           }
         } else {
           setCurrentAlarmLabel("No timers for today");
+          setStatusLabel("");
         }
         setSegmentDuration(0);
       }
@@ -123,7 +126,6 @@ function UpcomingAlarmBar({ alarms }) {
     };
   }, [alarms, setIsPlaying, setAudioSrc]);
 
-  // Effect 2: Countdown and progress bar for current active segment
   useEffect(() => {
     if (!currentAlarm || segmentDuration <= 0) {
       setProgressPercentage(0);
@@ -171,7 +173,6 @@ function UpcomingAlarmBar({ alarms }) {
     return () => clearInterval(interval);
   }, [currentAlarm, segmentDuration]);
 
-  // Effect 3: Countdown for time until next alarm
   useEffect(() => {
     if (currentAlarm || !nextAlarm) {
       setTimeUntilNextAlarm(0);
@@ -203,26 +204,69 @@ function UpcomingAlarmBar({ alarms }) {
     return `${h}:${m}:${s}`;
   };
 
+  const getStatusBadge = () => {
+    if (!statusLabel) return null;
+    const variantMap = {
+      Active: "success",
+      Waiting: "warning",
+      Complete: "secondary",
+    };
+    const iconMap = {
+      Active: <HourglassSplit size={14} className="me-1 tt-pulse" />,
+      Waiting: <Clock size={14} className="me-1" />,
+      Complete: <CheckCircle size={14} className="me-1" />,
+    };
+    return (
+      <Badge bg={variantMap[statusLabel]} pill className="px-3 py-2 fs-6">
+        {iconMap[statusLabel]}
+        {statusLabel}
+      </Badge>
+    );
+  };
+
+  const getHeaderGradient = () => {
+    if (currentAlarm) return "linear-gradient(135deg, #02b875 0%, #029e65 100%)";
+    if (statusLabel === "Complete") return "linear-gradient(135deg, #6c757d 0%, #495057 100%)";
+    return "linear-gradient(135deg, #4582ec 0%, #3469c7 100%)";
+  };
+
   return (
-    <div className="upcoming-alarm-bar text-center p-4" style={{ width: "100%" }}>
-      <h1 className="display-4 fw-bold mb-4">{currentAlarmLabel}</h1>
-      <ProgressBar style={{ height: "5rem", transform: "scaleX(-1)", borderRadius: "1rem" }}>
-        <ProgressBar animated variant={barVariant} now={progressPercentage} key={1} />
-      </ProgressBar>
-      <div className="mt-4">
-        {currentAlarm ? (
-          <>
-            <h4 className="text-muted mb-2">{nextAlarm ? `Next: ${nextAlarm.label} (${CommonUtils.formatTime(nextAlarm.start_time)})` : "Final Timer for Today!"}</h4>
-            <h2 className="display-1 fw-bold font-monospace">{formatTimeLeft(timeLeftInCurrentSegment)}</h2>
-          </>
-        ) : (
-          <>
-            <h4 className="text-muted mb-2">{nextAlarm ? `Next: ${nextAlarm.label} (${CommonUtils.formatTime(nextAlarm.start_time)})` : "No upcoming timers for today."}</h4>
-            {nextAlarm && (
-                <h2 className="display-1 fw-bold font-monospace">{formatTimeLeft(timeUntilNextAlarm)}</h2>
-            )}
-          </>
-        )}
+    <div className="upcoming-alarm-bar w-100">
+      <div className="text-white p-4 pb-3" style={{ background: getHeaderGradient(), borderRadius: "var(--tt-radius-lg) var(--tt-radius-lg) 0 0" }}>
+        <div className="d-flex align-items-center justify-content-between mb-2">
+          <h5 className="mb-0 fw-semibold opacity-75">
+            {currentAlarm ? <HourglassSplit className="me-2" size={20} /> : <Clock className="me-2" size={20} />}
+            Timer Status
+          </h5>
+          {getStatusBadge()}
+        </div>
+        <h2 className="fw-bold mb-0">{currentAlarmLabel}</h2>
+      </div>
+
+      <div className="bg-white p-4 pt-0" style={{ borderRadius: "0 0 var(--tt-radius-lg) var(--tt-radius-lg)", border: "1px solid rgba(0,0,0,0.06)", borderTop: "none" }}>
+        <ProgressBar style={{ height: "1.5rem", transform: "scaleX(-1)", borderRadius: "var(--tt-radius-md)" }} className="mb-3">
+          <ProgressBar animated variant={barVariant} now={progressPercentage} key={1} />
+        </ProgressBar>
+
+        <div className="text-center">
+          {currentAlarm ? (
+            <>
+              <div className="text-muted mb-2 small">
+                {nextAlarm ? `Next: ${nextAlarm.label} at ${CommonUtils.formatTime(nextAlarm.start_time)}` : "Final timer for today"}
+              </div>
+              <div className="display-4 fw-bold tt-countdown text-dark">{formatTimeLeft(timeLeftInCurrentSegment)}</div>
+            </>
+          ) : (
+            <>
+              <div className="text-muted mb-2 small">
+                {nextAlarm ? `Starts at ${CommonUtils.formatTime(nextAlarm.start_time)}` : "No upcoming timers"}
+              </div>
+              {nextAlarm && (
+                <div className="display-4 fw-bold tt-countdown text-dark">{formatTimeLeft(timeUntilNextAlarm)}</div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
