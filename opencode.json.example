@@ -35,6 +35,11 @@
       "headers": {
         "Authorization": "Bearer YOUR_GITHUB_PAT_HERE"
       }
+    },
+    "supabase": {
+      "type": "remote",
+      "url": "https://mcp.supabase.com/mcp?project_ref=<project_id>",
+      "enabled": true
     }
   }
 }
