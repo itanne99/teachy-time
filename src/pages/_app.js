@@ -1,6 +1,7 @@
 import { NavBar } from "@/components/NavBar/NavBar";
 import { AudioPlayer } from "@/components/AudioPlayer/AudioPlayer";
 import "@/styles/litera-bootstrap.css"
+import "@/styles/globals.css"
 import { Container } from "react-bootstrap";
 import { useEffect } from "react";
 import supabase from "@/supabase/component";
