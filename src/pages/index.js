@@ -1,6 +1,6 @@
 import React from "react";
 import { Container, Row, Col, Card, Button } from "react-bootstrap";
-import { Alarm, CalendarWeek, Copy } from "react-bootstrap-icons";
+import { Alarm, CalendarWeek, Copy, Calendar3, PencilSquare, ArrowRight } from "react-bootstrap-icons";
 import UpcomingAlarmBar from "@/components/UpcomingAlarm/UpcomingAlarmBar";
 import UpcomingAlarmList from "@/components/UpcomingAlarm/UpcomingAlarmList";
 import CommonUtils from "@/services/CommonUtils";
@@ -92,7 +92,7 @@ export default function App({ useStore }) {
         {/* Main Countdown Section */}
         <Col lg={8} className="d-flex flex-column">
           <Card className="border-0 shadow-sm mb-4 flex-grow-1">
-            <Card.Body className="p-0 overflow-hidden rounded d-flex flex-column justify-content-center">
+            <Card.Body className="pt-3 pe-0 pb-0 ps-0 overflow-hidden rounded d-flex flex-column justify-content-center">
               <UpcomingAlarmBar alarms={todayAlarms} />
             </Card.Body>
           </Card>
@@ -101,10 +101,15 @@ export default function App({ useStore }) {
             <Col md={6}>
               <Card className="h-100 border-0 shadow-sm">
                 <Card.Body className="d-flex flex-column">
-                  <h4 className="fw-bold mb-3">View Schedule</h4>
+                  <div className="d-flex align-items-center gap-2 mb-3">
+                    <Calendar3 size={22} className="text-primary" />
+                    <h4 className="fw-bold mb-0">View Schedule</h4>
+                  </div>
                   <p className="text-muted flex-grow-1">See your full lineup of timers and transitions for the entire week.</p>
                   <Link href="/ViewAlarms" passHref legacyBehavior>
-                    <Button variant="outline-primary" className="mt-3">Open Weekly View</Button>
+                    <Button variant="primary" className="mt-3">
+                      Open Weekly View <ArrowRight size={16} className="ms-1" />
+                    </Button>
                   </Link>
                 </Card.Body>
               </Card>
@@ -112,10 +117,15 @@ export default function App({ useStore }) {
             <Col md={6}>
               <Card className="h-100 border-0 shadow-sm">
                 <Card.Body className="d-flex flex-column">
-                  <h4 className="fw-bold mb-3">Manage Timers</h4>
+                  <div className="d-flex align-items-center gap-2 mb-3">
+                    <PencilSquare size={22} className="text-primary" />
+                    <h4 className="fw-bold mb-0">Manage Timers</h4>
+                  </div>
                   <p className="text-muted flex-grow-1">Add new timers, edit existing ones, or sync your schedule across days.</p>
                   <Link href="/EditAlarms" passHref legacyBehavior>
-                    <Button variant="outline-primary" className="mt-3">Edit Timers</Button>
+                    <Button variant="primary" className="mt-3">
+                      Edit Timers <ArrowRight size={16} className="ms-1" />
+                    </Button>
                   </Link>
                 </Card.Body>
               </Card>

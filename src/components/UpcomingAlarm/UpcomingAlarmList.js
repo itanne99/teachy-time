@@ -60,10 +60,10 @@ function UpcomingAlarmList({alarms, className}) {
             filteredAlarms.map((alarm, index) => (
               <Card 
                 key={alarm.id} 
-                className={`border ${index === 0 ? 'border-primary border-2' : 'border-light'}`}
+                className={`border ${index === 0 ? 'border-primary border-2' : 'border-secondary'}`}
                 style={{ transition: 'all 200ms ease' }}
               >
-                <Card.Body className="py-2 px-3">
+                <Card.Body className="py-2 px-3 bg-light">
                   {index === 0 && (
                     <Badge bg="primary" pill className="mb-2" style={{ fontSize: '0.65rem' }}>
                       <ArrowRight size={10} className="me-1" />
