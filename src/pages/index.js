@@ -91,7 +91,7 @@ export default function App({ useStore }) {
       <Row className="g-4 align-items-stretch">
         {/* Main Countdown Section */}
         <Col lg={8} className="d-flex flex-column">
-          <div className="flex-grow-1">
+          <div className="mb-4">
             <UpcomingAlarmBar alarms={todayAlarms} />
           </div>
 

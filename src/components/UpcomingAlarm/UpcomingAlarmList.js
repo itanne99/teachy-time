@@ -50,7 +50,7 @@ function UpcomingAlarmList({alarms, className}) {
           <Badge bg="light" text="dark" pill>{filteredAlarms.length}</Badge>
         </div>
       </Card.Header>
-      <Stack direction="vertical" gap={2} style={{ overflowY: 'auto' }} className='px-3 pb-3 flex-grow-1'>
+      <Stack direction="vertical" gap={2} style={{ overflowY: 'auto', overflowX: 'visible' }} className='px-3 pb-3 flex-grow-1'>
         {filteredAlarms.length === 0 ? (
           <Card.Body className="text-center py-5">
             <CalendarX size={48} className="text-muted mb-3" />
@@ -60,8 +60,8 @@ function UpcomingAlarmList({alarms, className}) {
             filteredAlarms.map((alarm, index) => (
               <Card 
                 key={alarm.id} 
-                className={`border ${index === 0 ? 'border-primary border-2' : 'border-secondary'} rounded`}
-                style={{ transition: 'all 200ms ease' }}
+                className={`border ${index === 0 ? 'border-primary border-2' : 'border-secondary'}`}
+                style={{ transition: 'all 200ms ease', borderRadius: 'var(--tt-radius-md)', overflow: 'hidden' }}
               >
                 <Card.Body className="py-2 px-3" style={{ backgroundColor: "var(--bs-light)" }}>
                   {index === 0 && (
