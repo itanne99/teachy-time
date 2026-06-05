@@ -14,6 +14,14 @@ export const LoginForm = ({ show, onHide, useStore }) => {
     e.preventDefault();
     const loginHandler = new LoginHandler(setIsLoading, setError, setAlarms);
     await loginHandler.login(email, password);
+    // Close modal after successful login (session is set by LoginHandler)
+    if (!error) {
+      setTimeout(() => {
+        onHide();
+        setEmail('');
+        setPassword('');
+      }, 500);
+    }
   };
 
   const sendPasswordResetEmail = async (e) => {
