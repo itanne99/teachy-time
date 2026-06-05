@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, Form, Button, Alert } from 'react-bootstrap';
 import { LoginHandler } from '@/services/LoginHandler';
 import { PersonCircle, Envelope, Lock } from 'react-bootstrap-icons';
+import supabase from '@/supabase/component';
 
 export const LoginForm = ({ show, onHide, useStore }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -9,19 +10,22 @@ export const LoginForm = ({ show, onHide, useStore }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const setAlarms = useStore((state) => state.setAlarms);
+  const session = useStore((state) => state.session);
+
+  // Auto-close modal when session becomes active (successful login)
+  useEffect(() => {
+    if (show && session) {
+      onHide();
+      setEmail('');
+      setPassword('');
+      setError('');
+    }
+  }, [show, session, onHide]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     const loginHandler = new LoginHandler(setIsLoading, setError, setAlarms);
     await loginHandler.login(email, password);
-    // Close modal after successful login (session is set by LoginHandler)
-    if (!error) {
-      setTimeout(() => {
-        onHide();
-        setEmail('');
-        setPassword('');
-      }, 500);
-    }
   };
 
   const sendPasswordResetEmail = async (e) => {
