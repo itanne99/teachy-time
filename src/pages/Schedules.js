@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Container, Table, Button, Form, Modal, Alert, Card, Badge } from "react-bootstrap";
 import { useStore } from "@/services/useStore";
-import { PlusCircle, PencilSquare, Trash2, Calendar3, CheckCircle, CalendarX } from "react-bootstrap-icons";
+import { PlusCircle, PencilSquare, Trash2, Calendar3, CheckCircle, CalendarX, ExclamationTriangle } from "react-bootstrap-icons";
 
 export default function Schedules() {
   const session = useStore((state) => state.session);
@@ -16,6 +16,9 @@ export default function Schedules() {
   const [scheduleName, setScheduleName] = useState("");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState(null);
 
   const fetchSchedules = async () => {
     if (!session) return;
@@ -78,22 +81,24 @@ export default function Schedules() {
     }
   };
 
-  const handleDelete = async (id, name) => {
+  const requestDelete = (id, name) => {
     if (name.toLowerCase() === "main") {
-      alert("You cannot delete the Main schedule.");
+      setError("You cannot delete the Main schedule.");
       return;
     }
+    setPendingDelete({ id, name });
+    setShowDeleteModal(true);
+  };
 
-    if (!confirm(`Are you sure you want to delete the schedule "${name}"? All associated alarms will be lost.`)) {
-      return;
-    }
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
 
     setLoading(true);
     try {
       const response = await fetch("/api/schedules", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify({ id: pendingDelete.id }),
       });
 
       if (!response.ok) {
@@ -101,7 +106,7 @@ export default function Schedules() {
         throw new Error(data.error || "Failed to delete schedule");
       }
 
-      if (currentScheduleId === id) {
+      if (currentScheduleId === pendingDelete.id) {
         const main = schedules.find(s => s.name.toLowerCase() === "main");
         if (main) setCurrentScheduleId(main.id);
       }
@@ -111,6 +116,8 @@ export default function Schedules() {
       setError(err.message);
     } finally {
       setLoading(false);
+      setShowDeleteModal(false);
+      setPendingDelete(null);
     }
   };
 
@@ -177,7 +184,7 @@ export default function Schedules() {
                           <Button 
                             variant="outline-danger" 
                             size="sm"
-                            onClick={() => handleDelete(schedule.id, schedule.name)}
+                            onClick={() => requestDelete(schedule.id, schedule.name)}
                             title="Delete"
                           >
                             <Trash2 size={16} />
@@ -216,6 +223,28 @@ export default function Schedules() {
           <Button variant="outline-secondary" onClick={() => setShowModal(false)}>Cancel</Button>
           <Button variant="primary" onClick={handleSave} disabled={loading}>
             {loading ? "Saving..." : "Save"}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={showDeleteModal} onHide={() => { setShowDeleteModal(false); setPendingDelete(null); }} centered>
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="d-flex align-items-center gap-2 text-danger">
+            <ExclamationTriangle size={22} />
+            Delete Schedule
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="pt-2">
+          <p className="text-muted">
+            Are you sure you want to delete <strong>&quot;{pendingDelete?.name}&quot;</strong>? All associated alarms will be lost.
+          </p>
+        </Modal.Body>
+        <Modal.Footer className="border-0 pt-0">
+          <Button variant="outline-secondary" onClick={() => { setShowDeleteModal(false); setPendingDelete(null); }} disabled={loading}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={confirmDelete} disabled={loading}>
+            {loading ? "Deleting..." : "Delete"}
           </Button>
         </Modal.Footer>
       </Modal>
