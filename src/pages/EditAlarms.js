@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Container, Row, Col, Button, Table, Card, Badge } from "react-bootstrap";
+import { Container, Row, Col, Button, Table, Card, Badge, Modal } from "react-bootstrap";
 import { useReactTable, getCoreRowModel, getSortedRowModel } from "@tanstack/react-table";
 import CommonUtils from "@/services/CommonUtils";
 import { AlterAlarm } from "@/components/models/AlterAlarm";
 import { ConfirmModal } from "@/components/models/ConfirmModal";
-import { PlusCircle, PencilSquare, Trash2, Copy, Clock, CalendarX, CheckCircle } from "react-bootstrap-icons";
+import { PlusCircle, PencilSquare, Trash2, Copy, Clock, CalendarX, CheckCircle, ExclamationTriangle } from "react-bootstrap-icons";
 
 const dayInitials = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
@@ -19,7 +19,9 @@ export default function EditAlarms({ useStore }) {
 
   const [showModal, setShowModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [pendingCopy, setPendingCopy] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null);
   const [editingAlarm, setEditingAlarm] = useState(null);
   const [validationError, setValidationError] = useState(null);
   const [confirmCopy, setConfirmCopy] = useState({});
@@ -72,18 +74,25 @@ export default function EditAlarms({ useStore }) {
     setShowModal(true);
   };
 
-  const removeAlarm = async (id) => {
+  const requestDelete = (alarm) => {
+    setPendingDelete(alarm);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+
     try {
       const response = await fetch("/api/alarms", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify({ id: pendingDelete.id }),
       });
 
       if (response.ok) {
         setAlarms({
           ...alarms,
-          [activeDay]: alarms[activeDay].filter((alarm) => alarm.id !== id),
+          [activeDay]: alarms[activeDay].filter((alarm) => alarm.id !== pendingDelete.id),
         });
       } else {
         const data = await response.json();
@@ -91,6 +100,9 @@ export default function EditAlarms({ useStore }) {
       }
     } catch (error) {
       console.error("Error deleting alarm:", error);
+    } finally {
+      setShowDeleteModal(false);
+      setPendingDelete(null);
     }
   };
 
@@ -247,7 +259,7 @@ export default function EditAlarms({ useStore }) {
             <Button variant="primary" size="sm" onClick={() => handleEditAlarm(row.original)} title="Edit">
               <PencilSquare size={16} />
             </Button>
-            <Button variant="danger" size="sm" onClick={() => removeAlarm(row.original.id)} title="Delete">
+            <Button variant="danger" size="sm" onClick={() => requestDelete(row.original)} title="Delete">
               <Trash2 size={16} />
             </Button>
           </div>
@@ -283,6 +295,28 @@ export default function EditAlarms({ useStore }) {
         title="Overwrite Timers?"
         message={`Are you sure you want to overwrite the existing timers for ${pendingCopy?.toDay}? This action cannot be undone.`}
       />
+
+      <Modal show={showDeleteModal} onHide={() => { setShowDeleteModal(false); setPendingDelete(null); }} centered>
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="d-flex align-items-center gap-2 text-danger">
+            <ExclamationTriangle size={22} />
+            Delete Timer
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="pt-2">
+          <p className="text-muted">
+            Are you sure you want to delete <strong>&quot;{pendingDelete?.label}&quot;</strong>? This action cannot be undone.
+          </p>
+        </Modal.Body>
+        <Modal.Footer className="border-0 pt-0">
+          <Button variant="outline-secondary" onClick={() => { setShowDeleteModal(false); setPendingDelete(null); }} disabled={loading}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={confirmDelete} disabled={loading}>
+            Delete
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
       {/* Day selector pills */}
       <Card className="border-0 shadow-sm mb-4">
