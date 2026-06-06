@@ -1,12 +1,14 @@
 import { NavBar } from "@/components/NavBar/NavBar";
 import { AudioPlayer } from "@/components/AudioPlayer/AudioPlayer";
 import "@/styles/litera-bootstrap.css"
+import "@/styles/globals.css"
 import { Container } from "react-bootstrap";
 import { useEffect } from "react";
 import supabase from "@/supabase/component";
 import { useStore } from "@/services/useStore";
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Analytics } from "@vercel/analytics/next"
+import { Agentation } from "agentation";
 
 export default function App({ Component, pageProps }) {
   const setAlarms = useStore((state) => state.setAlarms);
@@ -109,5 +111,6 @@ export default function App({ Component, pageProps }) {
     <AudioPlayer />
     <SpeedInsights/>
     <Analytics/>
+    {process.env.NODE_ENV === 'development' && <Agentation />}
   </Container>);
 }

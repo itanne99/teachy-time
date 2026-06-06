@@ -2,8 +2,8 @@ import React, { useState, forwardRef } from 'react';
 import { Dropdown, Form, Button, Alert } from 'react-bootstrap';
 import { LoginHandler } from '@/services/LoginHandler';
 import supabase from '@/supabase/component';
+import { PersonCircle, Envelope, Lock } from 'react-bootstrap-icons';
 
-// Custom Toggle to remove the dropdown arrow
 const CustomToggle = forwardRef(({ children, onClick }, ref) => (
   <Button
     ref={ref}
@@ -11,8 +11,10 @@ const CustomToggle = forwardRef(({ children, onClick }, ref) => (
       e.preventDefault();
       onClick(e);
     }}
-    variant="primary"
+    variant="outline-light"
+    className="d-flex align-items-center gap-2 px-3"
   >
+    <PersonCircle size={18} />
     {children}
   </Button>
 ));
@@ -62,34 +64,70 @@ function ProfileDropdown({ useStore }) {
   return (
     <Dropdown>
       <Dropdown.Toggle as={CustomToggle} id="dropdown-custom-components">
-        Login
+        Sign In
       </Dropdown.Toggle>
 
-      <Dropdown.Menu align="end" className="p-3" style={{ minWidth: '250px' }}>
-        {error && <Alert variant="danger">{error}</Alert>}
-        <Form onSubmit={handleLogin}>
-          <Form.Group className="mb-3" controlId="formBasicEmail">
-            <Form.Label>Email address</Form.Label>
-            <Form.Control type="email" placeholder="Enter email" value={email} onChange={(e) => setEmail(e.target.value)} />
-          </Form.Group>
+      <Dropdown.Menu align="end" className="p-0 border-0 shadow-lg" style={{ minWidth: '300px', borderRadius: '12px', overflow: 'hidden' }}>
+        <div className="bg-primary bg-gradient text-white p-3 text-center">
+          <PersonCircle size={40} />
+          <h6 className="mb-0 mt-2">Welcome Back</h6>
+          <small className="opacity-75">Sign in to your account</small>
+        </div>
+        
+        <div className="p-3">
+          {error && <Alert variant="danger" className="mb-3 py-2 small">{error}</Alert>}
+          <Form onSubmit={handleLogin}>
+            <Form.Group className="mb-3" controlId="formBasicEmail">
+              <Form.Label className="small text-muted mb-1">
+                <Envelope size={14} className="me-1" />
+                Email
+              </Form.Label>
+              <Form.Control 
+                type="email" 
+                placeholder="you@example.com" 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)}
+                className="form-control-sm border border-2"
+              />
+            </Form.Group>
 
-          <Form.Group className="mb-3" controlId="formBasicPassword">
-            <Form.Label>Password</Form.Label>
-            <Form.Control type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
-          </Form.Group>
+            <Form.Group className="mb-3" controlId="formBasicPassword">
+              <Form.Label className="small text-muted mb-1">
+                <Lock size={14} className="me-1" />
+                Password
+              </Form.Label>
+              <Form.Control 
+                type="password" 
+                placeholder="••••••••" 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)}
+                className="form-control-sm border border-2"
+              />
+            </Form.Group>
 
-          <Form.Group className="mb-3 text-end">
-            <Button variant="link" onClick={sendPasswordResetEmail} disabled={isLoading} style={{ padding: 0 }}>
-              Forgot Password?
-            </Button>
-          </Form.Group>
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <Button 
+                variant="link" 
+                className="p-0 text-decoration-none small" 
+                onClick={sendPasswordResetEmail} 
+                disabled={isLoading}
+              >
+                Forgot password?
+              </Button>
+            </div>
 
-          <div className="d-grid">
-            <Button variant="secondary" type="submit" disabled={isLoading}>
-              {isLoading ? 'Logging in...' : 'Login'}
-            </Button>
-          </div>
-        </Form>
+            <div className="d-grid">
+              <Button 
+                variant="primary" 
+                type="submit" 
+                disabled={isLoading}
+                className="fw-semibold"
+              >
+                {isLoading ? 'Signing in...' : 'Sign In'}
+              </Button>
+            </div>
+          </Form>
+        </div>
       </Dropdown.Menu>
     </Dropdown>
   );

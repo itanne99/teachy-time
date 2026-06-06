@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { Container, Form, Button, Alert, Card, Row, Col } from "react-bootstrap";
+import { Container, Form, Button, Alert, Card, Row, Col, Spinner } from "react-bootstrap";
 import supabase from "@/supabase/component";
 import { useRouter } from "next/router";
 import { useStore } from "@/services/useStore";
-import { UpdatePasswordModal } from "@/components/models/UpdatePassword"; // Import UpdatePasswordModal
+import { UpdatePasswordModal } from "@/components/models/UpdatePassword";
+import { PersonCircle, Envelope, Key, PencilSquare, CheckCircle } from "react-bootstrap-icons";
 
 const getUserProfileAndSession = async () => {
   const {
@@ -30,7 +31,6 @@ export default function Profile() {
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
 
-  // Get password reset state and setter from global store
   const passwordResetFlag = useStore((state) => state.passwordResetFlag);
   const setPasswordResetFlag = useStore((state) => state.setPasswordResetFlag);
 
@@ -51,21 +51,16 @@ export default function Profile() {
     });
   }, []);
 
-  // useEffect to check for 'reset=True' query parameter and set the flag
   useEffect(() => {
     if (router.isReady) {
       const { reset } = router.query;
       if (reset != undefined && (reset === 'true' || reset === 'True')) {
         setPasswordResetFlag(true);
-        // setForcedPasswordReset(true); // Removed: setForcedPasswordReset call
       }
     }
-  }, [router.isReady, router.query.reset, router, setPasswordResetFlag]); // Added setPasswordResetFlag to dependencies
+  }, [router.isReady, router.query.reset, router, setPasswordResetFlag]);
 
-  // New useEffect to clear the 'reset' query parameter when the modal is closed
   useEffect(() => {
-    // This useEffect now only clears the query param if passwordResetFlag is false AND the param exists.
-    // It no longer depends on 'forcedPasswordReset'.
     if (router.isReady && !passwordResetFlag && router.query.reset) {
       router.replace(router.pathname, undefined, { shallow: true });
     }
@@ -155,76 +150,106 @@ export default function Profile() {
   if (loading) {
     return (
       <Container className="py-4">
-        <Alert variant="info">Loading profile...</Alert>
+        <div className="text-center py-5">
+          <Spinner animation="border" variant="primary" className="mb-3" />
+          <p className="text-muted mb-0">Loading profile...</p>
+        </div>
       </Container>
     );
   }
 
   return (
     <Container className="py-4">
-      <Card>
-        <Card.Header>
-          <Row className="align-items-center">
-            <Col>
-              <h5 className="mb-0">Your Profile</h5>
-            </Col>
-            <Col xs="auto">
-              <Button
-                variant="primary"
-                onClick={handleEdit}
-                style={{ visibility: isEditing ? 'hidden' : 'visible' }}
-              >
-                Edit
-              </Button>
-            </Col>
-          </Row>
+      <Card className="border-0 shadow-sm">
+        <Card.Header className="bg-white border-0 py-3">
+          <div className="d-flex align-items-center justify-content-between">
+            <div className="d-flex align-items-center gap-3">
+              <span className="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 rounded-circle" style={{ width: "48px", height: "48px" }}>
+                <PersonCircle size={28} className="text-primary" />
+              </span>
+              <div>
+                <h5 className="fw-bold mb-0">Your Profile</h5>
+                <p className="text-muted small mb-0">Manage your account details</p>
+              </div>
+            </div>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleEdit}
+              style={{ visibility: isEditing ? 'hidden' : 'visible' }}
+            >
+              <PencilSquare className="me-1" size={14} />
+              Edit
+            </Button>
+          </div>
         </Card.Header>
         <Card.Body>
-          {error && <Alert variant="danger">{error}</Alert>}
-          {message && <Alert variant="success">{message}</Alert>}
+          {error && <Alert variant="danger" className="d-flex align-items-start gap-2"><span>{error}</span></Alert>}
+          {message && <Alert variant="success" className="d-flex align-items-start gap-2"><CheckCircle size={18} className="mt-1 flex-shrink-0" /><span>{message}</span></Alert>}
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3" controlId="formBasicEmail">
-              <Form.Label className="fw-bold">Email address</Form.Label>
+              <Form.Label className="small fw-semibold text-muted d-flex align-items-center gap-1">
+                <Envelope size={14} />
+                Email address
+              </Form.Label>
               {isEditing ? (
                 <Form.Control type="email" value={profile.email} readOnly disabled />
               ) : (
-                <span className="form-control-plaintext">{profile.email}</span>
+                <span className="form-control-plaintext fw-semibold">{profile.email}</span>
               )}
               <Form.Text className="text-muted">
                 Your email cannot be changed here.
               </Form.Text>
             </Form.Group>
 
-            <Form.Group className="mb-3" controlId="formFirstName">
-              <Form.Label className="fw-bold">First Name</Form.Label>
-              {isEditing ? (
-                <Form.Control type="text" name="first_name" value={profile.first_name} onChange={handleChange} />
-              ) : (
-                <span className="form-control-plaintext">{profile.first_name}</span>
-              )}
-            </Form.Group>
-
-            <Form.Group className="mb-3" controlId="formLastName">
-              <Form.Label className="fw-bold">Last Name</Form.Label>
-              {isEditing ? (
-                <Form.Control type="text" name="last_name" value={profile.last_name} onChange={handleChange} />
-              ) : (
-                <span className="form-control-plaintext">{profile.last_name}</span>
-              )}
-            </Form.Group>
+            <Row className="g-3">
+              <Col md={6}>
+                <Form.Group controlId="formFirstName">
+                  <Form.Label className="small fw-semibold text-muted">First Name</Form.Label>
+                  {isEditing ? (
+                    <Form.Control type="text" name="first_name" value={profile.first_name} onChange={handleChange} />
+                  ) : (
+                    <span className="form-control-plaintext fw-semibold">{profile.first_name || '—'}</span>
+                  )}
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group controlId="formLastName">
+                  <Form.Label className="small fw-semibold text-muted">Last Name</Form.Label>
+                  {isEditing ? (
+                    <Form.Control type="text" name="last_name" value={profile.last_name} onChange={handleChange} />
+                  ) : (
+                    <span className="form-control-plaintext fw-semibold">{profile.last_name || '—'}</span>
+                  )}
+                </Form.Group>
+              </Col>
+            </Row>
 
             {isEditing && (
-              <Col className="d-flex">
-                <Button variant="primary" type="submit" disabled={loading} className="me-2">
-                  {loading ? "Saving..." : "Save"}
+              <div className="d-flex align-items-center gap-2 mt-4 pt-3 border-top">
+                <Button variant="primary" type="submit" disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Spinner as="span" animation="border" size="sm" className="me-2" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="me-1" size={16} />
+                      Save Changes
+                    </>
+                  )}
                 </Button>
-                <Button variant="light" onClick={handleCancel} disabled={loading}>
+                <Button variant="outline-secondary" onClick={handleCancel} disabled={loading}>
                   Cancel
                 </Button>
-                <Button variant="warning" className="ms-auto" onClick={() => { setPasswordResetFlag(true); }} disabled={loading}>
-                  Reset Password
-                </Button>
-              </Col>
+                <div className="ms-auto">
+                  <Button variant="outline-warning" onClick={() => { setPasswordResetFlag(true); }} disabled={loading}>
+                    <Key className="me-1" size={16} />
+                    Reset Password
+                  </Button>
+                </div>
+              </div>
             )}
           </Form>
         </Card.Body>

@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Container, Row, Col, Button, Tabs, Tab, Table } from "react-bootstrap";
+import { Container, Row, Col, Button, Table, Card, Badge, Modal } from "react-bootstrap";
 import { useReactTable, getCoreRowModel, getSortedRowModel } from "@tanstack/react-table";
 import CommonUtils from "@/services/CommonUtils";
 import { AlterAlarm } from "@/components/models/AlterAlarm";
 import { ConfirmModal } from "@/components/models/ConfirmModal";
+import { PlusCircle, PencilSquare, Trash2, Copy, Clock, CalendarX, CheckCircle, ExclamationTriangle } from "react-bootstrap-icons";
+
+const dayInitials = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
 export default function EditAlarms({ useStore }) {
   const [activeDay, setActiveDay] = useState("");
@@ -11,23 +14,23 @@ export default function EditAlarms({ useStore }) {
   const setAlarms = useStore((state) => state.setAlarms);
   const user = useStore((state) => state.user);
   const currentScheduleId = useStore((state) => state.currentScheduleId);
-  const [sorting, setSorting] = React.useState([{ id: "start_time", desc: false }]); // Initialize sorting by start_time
+  const [sorting, setSorting] = React.useState([{ id: "start_time", desc: false }]);
   const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
   const [showModal, setShowModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [pendingCopy, setPendingCopy] = useState(null); // { fromDay, toDay }
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [pendingCopy, setPendingCopy] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null);
   const [editingAlarm, setEditingAlarm] = useState(null);
   const [validationError, setValidationError] = useState(null);
-  const [confirmCopy, setConfirmCopy] = useState({}); // State to manage confirmation for copying
+  const [confirmCopy, setConfirmCopy] = useState({});
   const [loading, setLoading] = useState(false);
 
-  // Set active day to current day on component mount
   useEffect(() => {
     setActiveDay(CommonUtils.getCurrentDay());
   }, []);
 
-  // Fetch alarms when user or currentScheduleId changes
   useEffect(() => {
     const fetchAlarms = async () => {
       if (user?.id && currentScheduleId) {
@@ -54,11 +57,10 @@ export default function EditAlarms({ useStore }) {
     fetchAlarms();
   }, [setAlarms, user, currentScheduleId]);
 
-  // Function to add a new alarm to the active day
   const handleAddAlarm = () => {
     const newAlarm = {
-      start_time: "00:00", // Changed from 'time'
-      end_time: "00:00",   // Added new field
+      start_time: "00:00",
+      end_time: "00:00",
       label: "New Timer",
     };
     setEditingAlarm(newAlarm);
@@ -72,19 +74,25 @@ export default function EditAlarms({ useStore }) {
     setShowModal(true);
   };
 
-  // Function to remove an alarm from the active day
-  const removeAlarm = async (id) => {
+  const requestDelete = (alarm) => {
+    setPendingDelete(alarm);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+
     try {
       const response = await fetch("/api/alarms", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify({ id: pendingDelete.id }),
       });
 
       if (response.ok) {
         setAlarms({
           ...alarms,
-          [activeDay]: alarms[activeDay].filter((alarm) => alarm.id !== id),
+          [activeDay]: alarms[activeDay].filter((alarm) => alarm.id !== pendingDelete.id),
         });
       } else {
         const data = await response.json();
@@ -92,6 +100,9 @@ export default function EditAlarms({ useStore }) {
       }
     } catch (error) {
       console.error("Error deleting alarm:", error);
+    } finally {
+      setShowDeleteModal(false);
+      setPendingDelete(null);
     }
   };
 
@@ -102,7 +113,7 @@ export default function EditAlarms({ useStore }) {
     const endpoint = "/api/alarms";
 
     const body = isUpdating
-      ? { id: alarmToSave.id, start_time: alarmToSave.start_time, end_time: alarmToSave.end_time, label: alarmToSave.label } // Updated fields
+      ? { id: alarmToSave.id, start_time: alarmToSave.start_time, end_time: alarmToSave.end_time, label: alarmToSave.label }
       : {
           ...alarmToSave,
           user_id: user.id,
@@ -131,7 +142,6 @@ export default function EditAlarms({ useStore }) {
             [activeDay]: [...alarms[activeDay], data],
           });
         }
-        // Set sorting to re-sort by start_time after save
         table.setSorting([{ id: "start_time", desc: false }]);
         setShowModal(false);
         setEditingAlarm(null);
@@ -150,7 +160,6 @@ export default function EditAlarms({ useStore }) {
     const toDayIndex = daysOfWeek.indexOf(toDay);
 
     try {
-      // Delete existing alarms on the target day first
       const deleteResponse = await fetch("/api/alarms", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
@@ -203,10 +212,8 @@ export default function EditAlarms({ useStore }) {
     }
   };
 
-  // Function to copy alarms from one day to another
   const handleCopyAlarms = async (fromDay, toDay) => {
     if (confirmCopy[toDay] === "confirm") {
-      // Second click: perform the copy
       const targetAlarms = alarms[toDay] || [];
       if (targetAlarms.length > 0) {
         setPendingCopy({ fromDay, toDay });
@@ -215,48 +222,45 @@ export default function EditAlarms({ useStore }) {
         await performCopy(fromDay, toDay);
       }
     } else {
-      // First click: ask for confirmation
       setConfirmCopy((prev) => ({ ...prev, [toDay]: "confirm" }));
     }
   };
 
-
-  // Define columns for TanStack Table
   const columns = useMemo(
     () => [
       {
-        accessorKey: "start_time", // Changed from 'time'
-        header: "Start Time",      // Changed header
-        size: "15%",               // Adjusted size
+        accessorKey: "start_time",
+        header: "Start",
+        size: "15%",
         sortingFn: "datetime",
         enableSorting: true,
-        cell: ({ row }) => <span style={{ fontSize: "2rem" }}>{CommonUtils.formatTime(row.original.start_time)}</span>, // Use start_time
+        cell: ({ row }) => <span className="fw-semibold">{CommonUtils.formatTime(row.original.start_time)}</span>,
       },
       {
-        accessorKey: "end_time",   // Added new column
-        header: "End Time",        // Added header
-        size: "15%",               // Adjusted size
+        accessorKey: "end_time",
+        header: "End",
+        size: "15%",
         sortingFn: "datetime",
         enableSorting: true,
-        cell: ({ row }) => <span style={{ fontSize: "2rem" }}>{CommonUtils.formatTime(row.original.end_time)}</span>, // Use end_time
+        cell: ({ row }) => <span className="fw-semibold">{CommonUtils.formatTime(row.original.end_time)}</span>,
       },
       {
         accessorKey: "label",
         header: "Label",
-        size: "55%", // Adjusted size
-        cell: ({ row }) => <span style={{ fontSize: "2rem" }}>{row.original.label}</span>,
+        size: "50%",
+        cell: ({ row }) => <span>{row.original.label}</span>,
       },
       {
         id: "actions",
         header: () => <span className="text-end">Actions</span>,
-        size: "15%",
+        size: "20%",
         cell: ({ row }) => (
-          <div className="text-end">
-            <Button variant="info" size="md" className="me-2" onClick={() => handleEditAlarm(row.original)}>
-              Edit
+          <div className="text-end d-flex gap-2 justify-content-end">
+            <Button variant="primary" size="sm" onClick={() => handleEditAlarm(row.original)} title="Edit">
+              <PencilSquare size={16} />
             </Button>
-            <Button variant="danger" size="md" onClick={() => removeAlarm(row.original.id)}>
-              Delete
+            <Button variant="danger" size="sm" onClick={() => requestDelete(row.original)} title="Delete">
+              <Trash2 size={16} />
             </Button>
           </div>
         ),
@@ -265,7 +269,6 @@ export default function EditAlarms({ useStore }) {
     [alarms, activeDay]
   );
 
-  // Prepare table data for TanStack Table
   const table = useReactTable({
     data: alarms[activeDay] || [],
     columns,
@@ -276,6 +279,8 @@ export default function EditAlarms({ useStore }) {
       sorting,
     },
   });
+
+  const todaysAlarms = alarms[activeDay] || [];
 
   return (
     <Container className="py-4">
@@ -290,71 +295,134 @@ export default function EditAlarms({ useStore }) {
         title="Overwrite Timers?"
         message={`Are you sure you want to overwrite the existing timers for ${pendingCopy?.toDay}? This action cannot be undone.`}
       />
-      {/* Day selection tabs */}
-      <Tabs id="day-tabs" activeKey={activeDay} onSelect={(k) => setActiveDay(k)} className="mb-3 justify-content-center">
-        {daysOfWeek.map((day) => (
-          <Tab eventKey={day} title={day} key={day} />
-        ))}
-      </Tabs>
 
+      <Modal show={showDeleteModal} onHide={() => { setShowDeleteModal(false); setPendingDelete(null); }} centered>
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="d-flex align-items-center gap-2 text-danger">
+            <ExclamationTriangle size={22} />
+            Delete Timer
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="pt-2">
+          <p className="text-muted">
+            Are you sure you want to delete <strong>&quot;{pendingDelete?.label}&quot;</strong>? This action cannot be undone.
+          </p>
+        </Modal.Body>
+        <Modal.Footer className="border-0 pt-0">
+          <Button variant="outline-secondary" onClick={() => { setShowDeleteModal(false); setPendingDelete(null); }} disabled={loading}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={confirmDelete} disabled={loading}>
+            Delete
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Day selector pills */}
+      <Card className="border-0 shadow-sm mb-4">
+        <Card.Body className="py-3">
+          <div className="d-flex align-items-center justify-content-center gap-2 flex-wrap">
+            {daysOfWeek.map((day, index) => (
+              <button
+                key={day}
+                type="button"
+                className={`tt-day-pill ${day === activeDay ? "active" : ""}`}
+                onClick={() => setActiveDay(day)}
+              >
+                {dayInitials[index]}
+              </button>
+            ))}
+          </div>
+        </Card.Body>
+      </Card>
+
+      {/* Header */}
       <Row className="align-items-center mb-3">
         <Col>
-          <h2>{activeDay} Timers</h2>
+          <div className="d-flex align-items-center gap-2">
+            <Clock size={22} className="text-primary" />
+            <h2 className="fw-bold mb-0">{activeDay} Timers</h2>
+            {todaysAlarms.length > 0 && (
+              <Badge bg="light" text="dark" pill>{todaysAlarms.length}</Badge>
+            )}
+          </div>
         </Col>
         <Col xs="auto">
-          <Button variant="success" onClick={handleAddAlarm}>
+          <Button variant="primary" onClick={handleAddAlarm}>
+            <PlusCircle className="me-2" size={18} />
             Add Timer
           </Button>
         </Col>
       </Row>
 
-      {/* Alarms table */}
-      <Table striped bordered hover responsive className="mb-4" style={{ opacity: loading ? 0.5 : 1 }}>
-        <thead>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <th key={header.id} className={header.column.id === "actions" ? "text-end" : ""} style={header.column.columnDef.size ? { width: header.column.columnDef.size } : {}}>
-                  {header.isPlaceholder ? null : header.column.columnDef.header instanceof Function ? header.column.columnDef.header() : header.column.columnDef.header}
-                </th>
+      {/* Alarms table or empty state */}
+      <Card className="border-0 shadow-sm mb-4">
+        {todaysAlarms.length === 0 ? (
+          <Card.Body className="text-center py-5">
+            <CalendarX size={48} className="text-muted mb-3" />
+            <h5 className="fw-bold">No timers for {activeDay}</h5>
+            <p className="text-muted mb-4">Click &quot;Add Timer&quot; to create your first timer for this day.</p>
+          </Card.Body>
+        ) : (
+          <Table hover responsive className="mb-0 align-middle" style={{ opacity: loading ? 0.5 : 1 }}>
+            <thead className="bg-light">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <th key={header.id} className={header.column.id === "actions" ? "text-end" : ""} style={header.column.columnDef.size ? { width: header.column.columnDef.size } : {}}>
+                      {header.isPlaceholder ? null : header.column.columnDef.header instanceof Function ? header.column.columnDef.header() : header.column.columnDef.header}
+                    </th>
+                  ))}
+                </tr>
               ))}
-            </tr>
-          ))}
-        </thead>
-        <tbody>
-          {table.getRowModel().rows.map((row) => (
-            <tr key={row.id}>
-              {row.getVisibleCells().map((cell) => (
-                <td key={cell.id} className={cell.column.id === "actions" ? "text-end" : "justify-content-center"}>
-                  {cell.column.columnDef.cell instanceof Function ? cell.column.columnDef.cell({ row }) : cell.getValue()}
-                </td>
+            </thead>
+            <tbody>
+              {table.getRowModel().rows.map((row) => (
+                <tr key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id} className={cell.column.id === "actions" ? "text-end" : ""}>
+                      {cell.column.columnDef.cell instanceof Function ? cell.column.columnDef.cell({ row }) : cell.getValue()}
+                    </td>
+                  ))}
+                </tr>
               ))}
-            </tr>
-          ))}
-        </tbody>
-      </Table>
+            </tbody>
+          </Table>
+        )}
+      </Card>
 
       {/* Copy alarms functionality */}
-      <Row className="align-items-center border-top pt-3">
-        <Col>
-          <h3>Copy Timers to...</h3>
-        </Col>
-        <Col xs="auto">
-          {daysOfWeek
-            .filter((day) => day !== activeDay)
-            .map((day) => (
-              <Button
-                key={day}
-                size="sm" // Changed size to 'sm' for consistency
-                className="me-2 mb-2"
-                onClick={() => handleCopyAlarms(activeDay, day)}
-                variant={confirmCopy[day] === "confirm" ? "warning" : confirmCopy[day] === "copied" ? "success" : "dark"}
-                disabled={confirmCopy[day] === "copied" || loading}>
-                {confirmCopy[day] === "confirm" ? "Confirm?" : confirmCopy[day] === "copied" ? "Copied!" : day}
-              </Button>
-            ))}
-        </Col>
-      </Row>
+      <Card className="border-0 shadow-sm">
+        <Card.Body>
+          <div className="d-flex align-items-center gap-2 mb-3">
+            <Copy size={20} className="text-primary" />
+            <h5 className="fw-bold mb-0">Copy Timers to...</h5>
+          </div>
+          <div className="d-flex flex-wrap gap-2">
+            {daysOfWeek
+              .filter((day) => day !== activeDay)
+              .map((day) => (
+                <Button
+                  key={day}
+                  size="sm"
+                  onClick={() => handleCopyAlarms(activeDay, day)}
+                  variant={confirmCopy[day] === "confirm" ? "warning" : confirmCopy[day] === "copied" ? "success" : "secondary"}
+                  disabled={confirmCopy[day] === "copied" || loading}>
+                  {confirmCopy[day] === "confirm" ? (
+                    <>Confirm {day}?</>
+                  ) : confirmCopy[day] === "copied" ? (
+                    <>
+                      <CheckCircle size={14} className="me-1" />
+                      Copied!
+                    </>
+                  ) : (
+                    day
+                  )}
+                </Button>
+              ))}
+          </div>
+        </Card.Body>
+      </Card>
     </Container>
   );
 }
