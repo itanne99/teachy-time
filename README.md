@@ -34,7 +34,11 @@
   - [Built With](#built-with)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
+  - [Local Supabase Setup](#local-supabase-setup)
+  - [Running the Development Server](#running-the-development-server)
+  - [Managing Migrations](#managing-migrations)
+  - [Stopping Supabase](#stopping-supabase)
+  - [Resetting Everything](#resetting-everything-destroys-all-data)
 - [Usage](#usage)
 - [Roadmap](#roadmap)
 - [Support](#support)
@@ -62,39 +66,91 @@
 
 ### Prerequisites
 
-> To run this project, you will need to set up a Supabase project and configure your environment variables. Create a `.env.local` file in the root of your project with the following:
->
-> ```
-> NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-> NEXT_PUBLIC_SUPABASE_KEY=your_supabase_anon_key
-> NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-> ```
->
-> Ensure you have Node.js (v18 or higher recommended) and npm/yarn/pnpm/bun installed.
+> - [Supabase CLI](https://supabase.com/docs/guides/local-development) installed (`npm install -g supabase` or via your package manager)
+> - Node.js v18+ and yarn installed
 
-### Installation
+### Local Supabase Setup
 
-First, run the development server:
+1. **Clone the repository and install dependencies:**
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+yarn install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. **Configure environment variables:**
 
-You can start editing the page by modifying `pages/index.js`. The page auto-updates as you edit the file.
+Copy `.env.example` to `.env` and update the values. The `.env` file contains all Supabase secrets and configuration.
 
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.js`.
+```bash
+cp .env.example .env
+```
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
+> **Important:** You must generate your own secrets before starting. Never use the default placeholder values in production.
 
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. **Start the local Supabase stack:**
+
+```bash
+yarn db:start
+```
+
+Wait for all services to become healthy (usually 1-2 minutes).
+
+4. **Initialize Supabase CLI for migrations (first time only):**
+
+```bash
+supabase init
+```
+
+5. **Pull your cloud schema to local (first time only):**
+
+Set `SUPABASE_DB_URL` in `.env` with your cloud database connection string, then run:
+
+```bash
+yarn db:pull
+```
+
+6. **Apply migrations to local database:**
+
+```bash
+yarn db:push:local
+```
+
+7. **Access Supabase Studio:**
+
+Open [http://localhost:54323](http://localhost:54323) in your browser.
+
+### Running the Development Server
+
+```bash
+yarn run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser.
+
+### Managing Migrations
+
+| Command | Description |
+|---------|-------------|
+| `yarn db:start` | Start local Supabase stack |
+| `yarn db:stop` | Stop local Supabase stack |
+| `yarn db:pull` | Pull cloud schema → `supabase/migrations/` |
+| `yarn db:push` | Push local migrations → cloud |
+| `yarn db:push:local` | Push local migrations → local DB |
+| `yarn db:diff -f <name>` | Generate migration from local schema diff |
+| `yarn db:list` | List applied migrations |
+| `yarn db:reset` | Destroy and recreate local stack (destroys all data) |
+
+### Stopping Supabase
+
+```bash
+yarn db:stop
+```
+
+### Resetting Everything (destroys all data)
+
+```bash
+yarn db:reset
+```
 
 ## Usage
 

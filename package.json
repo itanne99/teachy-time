@@ -6,7 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:pull": "supabase db pull",
+    "db:push": "supabase db push",
+    "db:push:local": "supabase db push --db-url \"$LOCAL_DB_URL\"",
+    "db:diff": "supabase db diff -f",
+    "db:list": "supabase migration list --db-url \"$LOCAL_DB_URL\"",
+    "db:reset": "supabase stop --no-backup && supabase start"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",
@@ -32,6 +40,7 @@
     "agentation": "^3.0.2",
     "eslint": "^9",
     "eslint-config-next": "15.5.2",
+    "supabase": "^2.106.0",
     "typescript": "^5.9.3"
   }
 }

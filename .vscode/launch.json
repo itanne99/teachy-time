@@ -5,7 +5,8 @@
       "name": "Next.js: debug server-side",
       "type": "node-terminal",
       "request": "launch",
-      "command": "npm run dev"
+      "command": "yarn run dev",
+      "preLaunchTask": "docker: supabase up"
     },
     {
       "name": "Next.js: debug client-side",
@@ -39,7 +40,14 @@
         "pattern": "- Local:.+(https?://.+)",
         "uriFormat": "%s",
         "webRoot": "${workspaceFolder}"
-      }
+      },
+      "preLaunchTask": "docker: supabase up"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Supabase + Next.js (Full Stack)",
+      "configurations": ["Next.js: debug server-side", "Next.js: debug client-side"]
     }
   ]
 }
