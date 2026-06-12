@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Container, Row, Col, Button, Table, Card, Badge, Modal } from "react-bootstrap";
+import { Container, Row, Col, Button, Table, Card, Badge, Modal, Form } from "react-bootstrap";
 import { useReactTable, getCoreRowModel, getSortedRowModel } from "@tanstack/react-table";
 import CommonUtils from "@/services/CommonUtils";
 import { AlterAlarm } from "@/components/models/AlterAlarm";
 import { ConfirmModal } from "@/components/models/ConfirmModal";
-import { PlusCircle, PencilSquare, Trash2, Copy, Clock, CalendarX, CheckCircle, ExclamationTriangle } from "react-bootstrap-icons";
+import { PlusCircle, PencilSquare, Trash2, Copy, Clock, CalendarX, CheckCircle, ExclamationTriangle, MusicNotes, VolumeUp, Bell } from "react-bootstrap-icons";
+import { PRESET_WARNING_CHIMES } from "@/config/chimes";
 
 const dayInitials = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
@@ -14,6 +15,9 @@ export default function EditAlarms({ useStore }) {
   const setAlarms = useStore((state) => state.setAlarms);
   const user = useStore((state) => state.user);
   const currentScheduleId = useStore((state) => state.currentScheduleId);
+  const userSounds = useStore((state) => state.userSounds);
+  const defaultSound = useStore((state) => state.defaultSound);
+  const warningLeadMinutes = useStore((state) => state.warningLeadMinutes);
   const [sorting, setSorting] = React.useState([{ id: "start_time", desc: false }]);
   const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -87,12 +91,16 @@ export default function EditAlarms({ useStore }) {
     const endpoint = "/api/alarms";
 
     const body = isUpdating
-      ? { id: alarmToSave.id, start_time: alarmToSave.start_time, end_time: alarmToSave.end_time, label: alarmToSave.label }
+      ? { id: alarmToSave.id, start_time: alarmToSave.start_time, end_time: alarmToSave.end_time, label: alarmToSave.label, play_sound: alarmToSave.play_sound, sound_id: alarmToSave.sound_id, play_warning_sound: alarmToSave.play_warning_sound, warning_sound_id: alarmToSave.warning_sound_id }
       : {
           ...alarmToSave,
           user_id: user.id,
           schedule_id: currentScheduleId,
           day_of_week: daysOfWeek.indexOf(activeDay),
+          play_sound: alarmToSave.play_sound || false,
+          sound_id: alarmToSave.sound_id || null,
+          play_warning_sound: alarmToSave.play_warning_sound || false,
+          warning_sound_id: alarmToSave.warning_sound_id || null,
         };
 
     try {
@@ -221,13 +229,103 @@ export default function EditAlarms({ useStore }) {
       {
         accessorKey: "label",
         header: "Label",
-        size: "50%",
+        size: "40%",
         cell: ({ row }) => <span>{row.original.label}</span>,
+      },
+      {
+        id: "sound",
+        header: "Sound",
+        size: "18%",
+        cell: ({ row }) => {
+          const alarm = row.original;
+          const hasSounds = userSounds.length > 0;
+          return (
+            <div className="d-flex align-items-center gap-2">
+              <Form.Check
+                type="checkbox"
+                checked={!!alarm.play_sound}
+                disabled={!hasSounds}
+                onChange={(e) => {
+                  const updated = { ...alarm, play_sound: e.target.checked };
+                  setAlarms({
+                    ...alarms,
+                    [activeDay]: alarms[activeDay].map(a => a.id === alarm.id ? updated : a),
+                  });
+                }}
+                title={!hasSounds ? "Upload sounds in your Profile first" : undefined}
+              />
+              {alarm.play_sound && hasSounds && (
+                <Form.Select
+                  size="sm"
+                  value={alarm.sound_id || "__default__"}
+                  onChange={(e) => {
+                    const val = e.target.value === "__default__" ? null : e.target.value;
+                    const updated = { ...alarm, sound_id: val };
+                    setAlarms({
+                      ...alarms,
+                      [activeDay]: alarms[activeDay].map(a => a.id === alarm.id ? updated : a),
+                    });
+                  }}
+                >
+                  <option value="__default__">Default</option>
+                  {userSounds.map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </Form.Select>
+              )}
+            </div>
+          );
+        },
+      },
+      {
+        id: "warning",
+        header: `Warning (${warningLeadMinutes}m)`,
+        size: "18%",
+        cell: ({ row }) => {
+          const alarm = row.original;
+          return (
+            <div className="d-flex align-items-center gap-2">
+              <Form.Check
+                type="checkbox"
+                checked={!!alarm.play_warning_sound}
+                onChange={(e) => {
+                  const updated = { ...alarm, play_warning_sound: e.target.checked };
+                  setAlarms({
+                    ...alarms,
+                    [activeDay]: alarms[activeDay].map(a => a.id === alarm.id ? updated : a),
+                  });
+                }}
+              />
+              {alarm.play_warning_sound && (
+                <Form.Select
+                  size="sm"
+                  value={alarm.warning_sound_id || "__default__"}
+                  onChange={(e) => {
+                    const val = e.target.value === "__default__" ? null : e.target.value;
+                    const updated = { ...alarm, warning_sound_id: val };
+                    setAlarms({
+                      ...alarms,
+                      [activeDay]: alarms[activeDay].map(a => a.id === alarm.id ? updated : a),
+                    });
+                  }}
+                >
+                  <option value="__default__">Default</option>
+                  {PRESET_WARNING_CHIMES.map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                  {userSounds.map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </Form.Select>
+              )}
+            </div>
+          );
+        },
       },
       {
         id: "actions",
         header: () => <span className="text-end">Actions</span>,
-        size: "20%",
+        size: "12%",
         cell: ({ row }) => (
           <div className="text-end d-flex gap-2 justify-content-end">
             <Button variant="primary" size="sm" onClick={() => handleEditAlarm(row.original)} title="Edit">

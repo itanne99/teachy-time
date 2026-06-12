@@ -16,6 +16,10 @@ export default function App({ Component, pageProps }) {
   const setUser = useStore((state) => state.setUser);
   const setSession = useStore((state) => state.setSession);
   const setSchedules = useStore((state) => state.setSchedules);
+  const setUserSounds = useStore((state) => state.setUserSounds);
+  const setDefaultSound = useStore((state) => state.setDefaultSound);
+  const setWarningLeadMinutes = useStore((state) => state.setWarningLeadMinutes);
+  const setWarningChimeId = useStore((state) => state.setWarningChimeId);
   const currentScheduleId = useStore((state) => state.currentScheduleId);
   const setCurrentScheduleId = useStore((state) => state.setCurrentScheduleId);
   const session = useStore((state) => state.session);
@@ -32,7 +36,6 @@ export default function App({ Component, pageProps }) {
           const data = await response.json();
           if (response.ok) {
             setSchedules(data);
-            // Only set default if one isn't already selected
             if (!currentScheduleId) {
               const mainSchedule = data.find(s => s.name.toLowerCase() === 'main') || data[0];
               if (mainSchedule) {
@@ -46,10 +49,38 @@ export default function App({ Component, pageProps }) {
       }
     };
 
+    const fetchSounds = async () => {
+      try {
+        const response = await fetch('/api/alarmSounds');
+        const data = await response.json();
+        if (response.ok) {
+          setUserSounds(data.sounds || []);
+          const defaultSoundObj = data.sounds?.find(s => s.id === data.defaultSoundId);
+          setDefaultSound(defaultSoundObj?.storage_url || null);
+        }
+      } catch (error) {
+        console.error('Failed to fetch sounds:', error);
+      }
+
+      try {
+        const response = await fetch('/api/userProfile');
+        const data = await response.json();
+        if (response.ok) {
+          setWarningLeadMinutes(data.warning_lead_minutes ?? 3);
+          setWarningChimeId(data.warning_chime_id || null);
+        }
+      } catch (error) {
+        console.error('Failed to fetch warning settings:', error);
+      }
+    };
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      if (session) fetchSchedules(session);
+      if (session) {
+        fetchSchedules(session);
+        fetchSounds();
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -61,11 +92,16 @@ export default function App({ Component, pageProps }) {
           break;
         case 'SIGNED_IN':
           fetchSchedules(session);
+          fetchSounds();
           break;
         case 'SIGNED_OUT':
           setAlarms({});
           setSchedules([]);
           setCurrentScheduleId(null);
+          setUserSounds([]);
+          setDefaultSound(null);
+          setWarningLeadMinutes(3);
+          setWarningChimeId(null);
           break;
         case 'PASSWORD_RECOVERY':
           break;
@@ -79,7 +115,7 @@ export default function App({ Component, pageProps }) {
     });
 
     return () => subscription.unsubscribe();
-  }, [setAlarms, setSession, setUser, setSchedules, setCurrentScheduleId, currentScheduleId]);
+  }, [setAlarms, setSession, setUser, setSchedules, setCurrentScheduleId, currentScheduleId, setUserSounds, setDefaultSound, setWarningLeadMinutes, setWarningChimeId]);
 
   // Separate effect to handle alarm fetching when schedule changes
   useEffect(() => {
