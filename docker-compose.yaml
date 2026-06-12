@@ -144,6 +144,12 @@ services:
       PGRST_DB_USE_LEGACY_GUCS: "false"
       PGRST_APP_SETTINGS_JWT_SECRET: ${JWT_SECRET}
       PGRST_APP_SETTINGS_JWT_EXP: ${JWT_EXPIRY}
+    healthcheck:
+      test: ["CMD", "curl", "-sSf", "http://localhost:3000/"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     command: ["postgrest"]
 
   realtime:
@@ -236,7 +242,7 @@ services:
       IMGPROXY_BIND: ":5001"
       IMGPROXY_LOCAL_FILESYSTEM_ROOT: /
       IMGPROXY_USE_ETAG: "true"
-      IMGPROXY_AUTO_WEBP: ${IMGPROXY_AUTO_WEBP}
+      IMGPROXY_AUTO_WEBP: ${IMGPROXY_AUTO_WEBP:-true}
       IMGPROXY_MAX_SRC_RESOLUTION: 16.8
 
   meta:
