@@ -66,7 +66,6 @@
 
 ### Prerequisites
 
-> - [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) installed
 > - [Supabase CLI](https://supabase.com/docs/guides/local-development) installed (`npm install -g supabase` or via your package manager)
 > - Node.js v18+ and yarn installed
 
@@ -88,17 +87,13 @@ cp .env.example .env
 
 > **Important:** You must generate your own secrets before starting. Never use the default placeholder values in production.
 
-3. **Start the Supabase stack:**
+3. **Start the local Supabase stack:**
 
 ```bash
-docker compose up -d
+yarn db:start
 ```
 
-Wait for all services to become healthy (usually 1-2 minutes). Check status with:
-
-```bash
-docker compose ps
-```
+Wait for all services to become healthy (usually 1-2 minutes).
 
 4. **Initialize Supabase CLI for migrations (first time only):**
 
@@ -106,17 +101,23 @@ docker compose ps
 supabase init
 ```
 
-5. **Apply migrations to local database:**
+5. **Pull your cloud schema to local (first time only):**
+
+Set `SUPABASE_DB_URL` in `.env` with your cloud database connection string, then run:
 
 ```bash
-supabase db push --db-url "postgresql://postgres.your-tenant-id:your-super-secret-and-long-postgres-password@localhost:5432/postgres"
+yarn db:pull
 ```
 
-6. **Access Supabase Studio:**
+6. **Apply migrations to local database:**
 
-Open [http://localhost:8000](http://localhost:8000) in your browser. You will be prompted for credentials:
-- Username: `supabase`
-- Password: (value of `DASHBOARD_PASSWORD` from your `.env`)
+```bash
+yarn db:push:local
+```
+
+7. **Access Supabase Studio:**
+
+Open [http://localhost:54323](http://localhost:54323) in your browser.
 
 ### Running the Development Server
 
@@ -130,22 +131,25 @@ Open [http://localhost:3000](http://localhost:3000) with your browser.
 
 | Command | Description |
 |---------|-------------|
-| `supabase migration new <name>` | Create a new empty migration file |
-| `supabase db diff -f <name> --db-url "<local-url>"` | Generate migration from schema diff |
-| `supabase db push --db-url "<local-url>"` | Apply migrations to local DB |
-| `supabase db push --db-url "<prod-url>"` | Apply migrations to production |
+| `yarn db:start` | Start local Supabase stack |
+| `yarn db:stop` | Stop local Supabase stack |
+| `yarn db:pull` | Pull cloud schema → `supabase/migrations/` |
+| `yarn db:push` | Push local migrations → cloud |
+| `yarn db:push:local` | Push local migrations → local DB |
+| `yarn db:diff -f <name>` | Generate migration from local schema diff |
+| `yarn db:list` | List applied migrations |
+| `yarn db:reset` | Destroy and recreate local stack (destroys all data) |
 
 ### Stopping Supabase
 
 ```bash
-docker compose down
+yarn db:stop
 ```
 
 ### Resetting Everything (destroys all data)
 
 ```bash
-docker compose down -v
-rm -rf volumes/db/data volumes/storage
+yarn db:reset
 ```
 
 ## Usage
