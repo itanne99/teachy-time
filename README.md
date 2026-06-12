@@ -62,39 +62,87 @@
 
 ### Prerequisites
 
-> To run this project, you will need to set up a Supabase project and configure your environment variables. Create a `.env.local` file in the root of your project with the following:
->
-> ```
-> NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-> NEXT_PUBLIC_SUPABASE_KEY=your_supabase_anon_key
-> NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-> ```
->
-> Ensure you have Node.js (v18 or higher recommended) and npm/yarn/pnpm/bun installed.
+> - [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) installed
+> - [Supabase CLI](https://supabase.com/docs/guides/local-development) installed (`npm install -g supabase` or via your package manager)
+> - Node.js v18+ and yarn installed
 
-### Installation
+### Local Supabase Setup
 
-First, run the development server:
+1. **Clone the repository and install dependencies:**
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+yarn install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. **Configure environment variables:**
 
-You can start editing the page by modifying `pages/index.js`. The page auto-updates as you edit the file.
+Copy `.env.example` to `.env` and update the values. The `.env` file contains all Supabase secrets and configuration.
 
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.js`.
+```bash
+cp .env.example .env
+```
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
+> **Important:** You must generate your own secrets before starting. Never use the default placeholder values in production.
 
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. **Start the Supabase stack:**
+
+```bash
+docker compose up -d
+```
+
+Wait for all services to become healthy (usually 1-2 minutes). Check status with:
+
+```bash
+docker compose ps
+```
+
+4. **Initialize Supabase CLI for migrations (first time only):**
+
+```bash
+supabase init
+```
+
+5. **Apply migrations to local database:**
+
+```bash
+supabase db push --db-url "postgresql://postgres.your-tenant-id:your-super-secret-and-long-postgres-password@localhost:5432/postgres"
+```
+
+6. **Access Supabase Studio:**
+
+Open [http://localhost:8000](http://localhost:8000) in your browser. You will be prompted for credentials:
+- Username: `supabase`
+- Password: (value of `DASHBOARD_PASSWORD` from your `.env`)
+
+### Running the Development Server
+
+```bash
+yarn run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser.
+
+### Managing Migrations
+
+| Command | Description |
+|---------|-------------|
+| `supabase migration new <name>` | Create a new empty migration file |
+| `supabase db diff -f <name> --db-url "<local-url>"` | Generate migration from schema diff |
+| `supabase db push --db-url "<local-url>"` | Apply migrations to local DB |
+| `supabase db push --db-url "<prod-url>"` | Apply migrations to production |
+
+### Stopping Supabase
+
+```bash
+docker compose down
+```
+
+### Resetting Everything (destroys all data)
+
+```bash
+docker compose down -v
+rm -rf volumes/db/data volumes/storage
+```
 
 ## Usage
 
