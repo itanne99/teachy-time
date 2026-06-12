@@ -47,8 +47,7 @@
   "compounds": [
     {
       "name": "Supabase + Next.js (Full Stack)",
-      "configurations": ["Next.js: debug server-side", "Next.js: debug client-side"],
-      "preLaunchTask": "docker: supabase up"
+      "configurations": ["Next.js: debug server-side", "Next.js: debug client-side"]
     }
   ]
 }
