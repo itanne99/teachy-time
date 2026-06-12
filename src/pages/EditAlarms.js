@@ -31,32 +31,6 @@ export default function EditAlarms({ useStore }) {
     setActiveDay(CommonUtils.getCurrentDay());
   }, []);
 
-  useEffect(() => {
-    const fetchAlarms = async () => {
-      if (user?.id && currentScheduleId) {
-        setLoading(true);
-        try {
-          const response = await fetch("/api/alarms", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ user_id: user.id, schedule_id: currentScheduleId }),
-          });
-          const data = await response.json();
-          if (response.ok) {
-            setAlarms(data);
-          } else {
-            console.error("Failed to fetch alarms:", data.error);
-          }
-        } catch (error) {
-          console.error("Error fetching alarms:", error);
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
-    fetchAlarms();
-  }, [setAlarms, user, currentScheduleId]);
-
   const handleAddAlarm = () => {
     const newAlarm = {
       start_time: "00:00",
