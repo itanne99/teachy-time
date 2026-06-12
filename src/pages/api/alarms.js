@@ -295,11 +295,13 @@ export default async function handler(req, res) {
         } 
         
         if (day_of_week !== undefined) {
+          const { schedule_id } = body;
           const { error } = await supabase
             .from('alarms')
             .delete()
             .eq('user_id', userId)
-            .eq('day_of_week', day_of_week);
+            .eq('day_of_week', day_of_week)
+            .eq('schedule_id', schedule_id);
 
           if (error) {
             res.status(500).json({ error: error.message });
