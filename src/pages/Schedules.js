@@ -1,14 +1,16 @@
-import { useState } from "react";
-import { Container, Table, Button, Form, Modal, Alert, Card, Badge } from "react-bootstrap";
-import { useStore } from "@/services/useStore";
-import { PlusCircle, PencilSquare, Trash2, Calendar3, CheckCircle, CalendarX, ExclamationTriangle } from "react-bootstrap-icons";
+import { useState } from "react"
+import { Container, Table, Button, Form, Modal, Alert, Card, Badge } from "react-bootstrap"
+import { useStore } from "@/services/useStore"
+import { PlusCircle, PencilSquare, Trash2, Calendar3, CheckCircle, CalendarX, ExclamationTriangle } from "react-bootstrap-icons"
+import { API_ENDPOINTS } from "@/config/constants"
 
 export default function Schedules() {
-  const session = useStore((state) => state.session);
-  const schedules = useStore((state) => state.schedules);
-  const setSchedules = useStore((state) => state.setSchedules);
-  const currentScheduleId = useStore((state) => state.currentScheduleId);
-  const setCurrentScheduleId = useStore((state) => state.setCurrentScheduleId);
+  const session = useStore((state) => state.session)
+  const schedules = useStore((state) => state.schedules)
+  const setSchedules = useStore((state) => state.setSchedules)
+  const currentScheduleId = useStore((state) => state.currentScheduleId)
+  const setCurrentScheduleId = useStore((state) => state.setCurrentScheduleId)
+  const maxScheduleNameLength = useStore((state) => state.maxScheduleNameLength)
 
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState("add");
@@ -23,11 +25,11 @@ export default function Schedules() {
   const fetchSchedules = async () => {
     if (!session) return;
     try {
-      const response = await fetch("/api/schedules", {
+      const response = await fetch(API_ENDPOINTS.SCHEDULES, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: session.user.id }),
-      });
+      })
       const data = await response.json();
       if (response.ok) {
         setSchedules(data);
@@ -61,11 +63,11 @@ export default function Schedules() {
         ? { user_id: session.user.id, name: scheduleName }
         : { id: selectedSchedule.id, name: scheduleName };
 
-      const response = await fetch("/api/schedules", {
+      const response = await fetch(API_ENDPOINTS.SCHEDULES, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
-      });
+      })
 
       if (!response.ok) {
         const data = await response.json();
@@ -95,11 +97,11 @@ export default function Schedules() {
 
     setLoading(true);
     try {
-      const response = await fetch("/api/schedules", {
+      const response = await fetch(API_ENDPOINTS.SCHEDULES, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: pendingDelete.id }),
-      });
+      })
 
       if (!response.ok) {
         const data = await response.json();
@@ -215,6 +217,7 @@ export default function Schedules() {
               value={scheduleName} 
               onChange={(e) => setScheduleName(e.target.value)}
               placeholder="e.g., Summer Term, Work, etc."
+              maxLength={maxScheduleNameLength}
               autoFocus
             />
           </Form.Group>

@@ -1,26 +1,18 @@
-import createClient from "@/supabase/api";
+import createClient from '@/supabase/api'
+import { DAYS_OF_WEEK } from '@/config/constants'
+import { getAppConfig } from '@/services/configService'
 
 async function getAuthUserId(req, res) {
-  const supabase = createClient(req, res);
-  const { data: { user }, error } = await supabase.auth.getUser();
+  const supabase = createClient(req, res)
+  const { data: { user }, error } = await supabase.auth.getUser()
   if (error || !user) {
-    return { userId: null, error: 'Unauthorized' };
+    return { userId: null, error: 'Unauthorized' }
   }
-  return { userId: user.id, error: null };
+  return { userId: user.id, error: null }
 }
 
 export default async function handler(req, res) {
-  const { method, body } = req;
-
-  const daysOfWeekMap = {
-    0: 'Sunday',
-    1: 'Monday',
-    2: 'Tuesday',
-    3: 'Wednesday',
-    4: 'Thursday',
-    5: 'Friday',
-    6: 'Saturday',
-  };
+  const { method, body } = req
 
   const supabase = createClient(req, res);
 
@@ -92,27 +84,22 @@ export default async function handler(req, res) {
         const { data, error } = await queryBuilder.order('start_time', { ascending: true }); // Order by start_time
 
         if (data) {
-          const transformedData = {
-            'Sunday': [],
-            'Monday': [],
-            'Tuesday': [],
-            'Wednesday': [],
-            'Thursday': [],
-            'Friday': [],
-            'Saturday': [],
-          };
+          const transformedData = {}
+          DAYS_OF_WEEK.forEach(day => {
+            transformedData[day] = []
+          })
 
           data.forEach(alarm => {
-            const dayName = daysOfWeekMap[alarm.day_of_week];
+            const dayName = DAYS_OF_WEEK[alarm.day_of_week]
             if (dayName) {
               transformedData[dayName].push({
                 ...alarm,
                 sound_url: alarm.alarm_sounds?.storage_url || null,
                 warning_sound_url: null,
                 alarm_sounds: undefined,
-              });
+              })
             }
-          });
+          })
           res.status(200).json(transformedData);
           return;
         }
@@ -131,11 +118,17 @@ export default async function handler(req, res) {
 
     case 'PUT':
       try {
-        const { day_of_week, start_time, end_time, label, schedule_id, play_sound, sound_id, play_warning_sound, warning_sound_id } = body;
+        const { day_of_week, start_time, end_time, label, schedule_id, play_sound, sound_id, play_warning_sound, warning_sound_id } = body
 
-        if (!day_of_week && day_of_week !== 0 || !start_time || !end_time || !label || !schedule_id) {
-          res.status(400).json({ error: 'Missing required fields: day_of_week, start_time, end_time, label, schedule_id.' });
-          return;
+        if ((!day_of_week && day_of_week !== 0) || !start_time || !end_time || !label || !schedule_id) {
+          res.status(400).json({ error: 'Missing required fields: day_of_week, start_time, end_time, label, schedule_id.' })
+          return
+        }
+
+        const config = await getAppConfig(supabase)
+        if (label.length > config.max_label_length) {
+          res.status(400).json({ error: `Label cannot exceed ${config.max_label_length} characters.` })
+          return
         }
 
         if (start_time >= end_time) {
@@ -183,10 +176,18 @@ export default async function handler(req, res) {
 
     case 'PATCH':
       try {
-        const { id, start_time, end_time, label, play_sound, sound_id, play_warning_sound, warning_sound_id } = body;
+        const { id, start_time, end_time, label, play_sound, sound_id, play_warning_sound, warning_sound_id } = body
         if (!id) {
-          res.status(400).json({ error: 'Timer ID is required.' });
-          return;
+          res.status(400).json({ error: 'Timer ID is required.' })
+          return
+        }
+
+        if (label) {
+          const config = await getAppConfig(supabase)
+          if (label.length > config.max_label_length) {
+            res.status(400).json({ error: `Label cannot exceed ${config.max_label_length} characters.` })
+            return
+          }
         }
 
         const { data: alarmToUpdate, error: alarmToUpdateError } = await checkExistingAlarm({ id });

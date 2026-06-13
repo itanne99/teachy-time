@@ -1,4 +1,5 @@
-import createClient from "@/supabase/api";
+import createClient from "@/supabase/api"
+import { getAppConfig } from "@/services/configService"
 
 async function getAuthUserId(req, res) {
   const supabase = createClient(req, res);
@@ -37,8 +38,13 @@ export default async function handler(req, res) {
 
     case 'PUT':
       try {
-        const { name } = body;
-        if (!name) return res.status(400).json({ error: 'Name is required.' });
+        const { name } = body
+        if (!name) return res.status(400).json({ error: 'Name is required.' })
+
+        const config = await getAppConfig(supabase)
+        if (name.length > config.max_schedule_name_length) {
+          return res.status(400).json({ error: `Schedule name cannot exceed ${config.max_schedule_name_length} characters.` })
+        }
 
         const { data, error } = await supabase
           .from('schedules')
@@ -55,8 +61,13 @@ export default async function handler(req, res) {
 
     case 'PATCH':
       try {
-        const { id, name } = body;
-        if (!id || !name) return res.status(400).json({ error: 'ID and Name are required.' });
+        const { id, name } = body
+        if (!id || !name) return res.status(400).json({ error: 'ID and Name are required.' })
+
+        const config = await getAppConfig(supabase)
+        if (name.length > config.max_schedule_name_length) {
+          return res.status(400).json({ error: `Schedule name cannot exceed ${config.max_schedule_name_length} characters.` })
+        }
 
         const { data: existingSchedule, error: fetchError } = await supabase
           .from('schedules')

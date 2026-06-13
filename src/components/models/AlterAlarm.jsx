@@ -5,11 +5,12 @@ import { useStore } from '@/services/useStore';
 import { PRESET_CHIMES, PRESET_WARNING_CHIMES } from '@/config/chimes';
 
 export const AlterAlarm = ({ show, onHide, onSave, alarm, day, validationError }) => {
-  const [currentAlarm, setCurrentAlarm] = useState(alarm);
-  const [isLoading, setIsLoading] = useState(false);
-  const userSounds = useStore((state) => state.userSounds);
-  const defaultSound = useStore((state) => state.defaultSound);
-  const warningLeadMinutes = useStore((state) => state.warningLeadMinutes);
+  const [currentAlarm, setCurrentAlarm] = useState(alarm)
+  const [isLoading, setIsLoading] = useState(false)
+  const userSounds = useStore((state) => state.userSounds)
+  const defaultSound = useStore((state) => state.defaultSound)
+  const warningLeadMinutes = useStore((state) => state.warningLeadMinutes)
+  const maxLabelLength = useStore((state) => state.maxLabelLength)
 
   useEffect(() => {
     setCurrentAlarm(alarm);
@@ -83,6 +84,7 @@ export const AlterAlarm = ({ show, onHide, onSave, alarm, day, validationError }
               placeholder="e.g., Math Lesson, Recess, Lunch"
               value={currentAlarm?.label || ''}
               onChange={(e) => handleChange('label', e.target.value)}
+              maxLength={maxLabelLength}
             />
           </Form.Group>
 

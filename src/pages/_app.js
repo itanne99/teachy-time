@@ -1,14 +1,15 @@
-import { NavBar } from "@/components/NavBar/NavBar";
-import { AudioPlayer } from "@/components/AudioPlayer/AudioPlayer";
+import { NavBar } from "@/components/NavBar/NavBar"
+import { AudioPlayer } from "@/components/AudioPlayer/AudioPlayer"
 import "@/styles/litera-bootstrap.css"
 import "@/styles/globals.css"
-import { Container } from "react-bootstrap";
-import { useEffect } from "react";
-import supabase from "@/supabase/component";
-import { useStore } from "@/services/useStore";
+import { Container } from "react-bootstrap"
+import { useEffect } from "react"
+import supabase from "@/supabase/component"
+import { useStore } from "@/services/useStore"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Analytics } from "@vercel/analytics/next"
-import { Agentation } from "agentation";
+import { Agentation } from "agentation"
+import { API_ENDPOINTS } from "@/config/constants"
 
 export default function App({ Component, pageProps }) {
   const setAlarms = useStore((state) => state.setAlarms);
@@ -27,7 +28,7 @@ export default function App({ Component, pageProps }) {
     const fetchSchedules = async (currentSession) => {
       if (currentSession) {
         try {
-          const response = await fetch('/api/schedules', {
+          const response = await fetch(API_ENDPOINTS.SCHEDULES, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ user_id: currentSession.user.id }),
@@ -50,7 +51,7 @@ export default function App({ Component, pageProps }) {
 
     const fetchSounds = async () => {
       try {
-        const response = await fetch('/api/alarmSounds');
+        const response = await fetch(API_ENDPOINTS.ALARM_SOUNDS);
         const data = await response.json();
         if (response.ok) {
           setUserSounds(data.sounds || []);
@@ -62,7 +63,7 @@ export default function App({ Component, pageProps }) {
       }
 
       try {
-        const response = await fetch('/api/userProfile');
+        const response = await fetch(API_ENDPOINTS.USER_PROFILE);
         const data = await response.json();
         if (response.ok) {
           setWarningLeadMinutes(data.warning_lead_minutes ?? 3);
@@ -70,6 +71,23 @@ export default function App({ Component, pageProps }) {
         }
       } catch (error) {
         console.error('Failed to fetch warning settings:', error);
+      }
+    };
+
+    const fetchConfig = async () => {
+      try {
+        const response = await fetch(API_ENDPOINTS.CONFIG);
+        const data = await response.json();
+        if (response.ok) {
+          useStore.getState().setAppConfig({
+            maxLabelLength: data.max_label_length,
+            maxScheduleNameLength: data.max_schedule_name_length,
+            defaultChimeUrl: data.default_chime_url,
+            defaultWarningChimeUrl: data.default_warning_chime_url,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch app config:', error);
       }
     };
 
@@ -81,6 +99,8 @@ export default function App({ Component, pageProps }) {
         fetchSounds();
       }
     });
+
+    fetchConfig();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
@@ -121,7 +141,7 @@ export default function App({ Component, pageProps }) {
     const fetchAlarms = async () => {
       if (session?.user?.id && currentScheduleId) {
         try {
-          const response = await fetch('/api/alarms', {
+          const response = await fetch(API_ENDPOINTS.ALARMS, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ user_id: session.user.id, schedule_id: currentScheduleId }),

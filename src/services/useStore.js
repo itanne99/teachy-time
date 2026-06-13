@@ -1,11 +1,11 @@
-import { create } from "zustand";
+import { create } from 'zustand'
+import { DAYS_OF_WEEK, DEFAULT_CHIME_URL, DEFAULT_WARNING_CHIME_URL } from '@/config/constants'
 
 const setInitialAlarms = () => {
-  const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-  return daysOfWeek.reduce((acc, day) => {
-      acc[day] = [];
-      return acc;
-    }, {});
+  return DAYS_OF_WEEK.reduce((acc, day) => {
+    acc[day] = []
+    return acc
+  }, {})
 }
 
 export const useStore = create((set) => ({
@@ -21,7 +21,7 @@ export const useStore = create((set) => ({
   setSession: (session) => set({ session }),
   passwordResetFlag: null,
   setPasswordResetFlag: (flag) => set({ passwordResetFlag: flag }),
-  audioSrc: "https://mgsqrwnwppjmijenbfys.supabase.co/storage/v1/object/public/chimes/public/wind-chimes-37762.mp3",
+  audioSrc: DEFAULT_CHIME_URL,
   setAudioSrc: (src) => set({ audioSrc: src }),
   isPlaying: false,
   setIsPlaying: (playing) => set({ isPlaying: playing }),
@@ -33,4 +33,12 @@ export const useStore = create((set) => ({
   setWarningLeadMinutes: (minutes) => set({ warningLeadMinutes: minutes }),
   warningChimeId: null,
   setWarningChimeId: (id) => set({ warningChimeId: id }),
-}));
+
+  // Dynamic configuration states loaded from app_config
+  maxLabelLength: 50,
+  maxScheduleNameLength: 100,
+  defaultChimeUrl: DEFAULT_CHIME_URL,
+  defaultWarningChimeUrl: DEFAULT_WARNING_CHIME_URL,
+  setAppConfig: (config) => set((state) => ({ ...state, ...config })),
+}))
+

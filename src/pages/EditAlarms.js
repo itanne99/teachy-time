@@ -1,24 +1,24 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { Container, Row, Col, Button, Table, Card, Badge, Modal, Form } from "react-bootstrap";
-import { useReactTable, getCoreRowModel, getSortedRowModel } from "@tanstack/react-table";
-import CommonUtils from "@/services/CommonUtils";
-import { AlterAlarm } from "@/components/models/AlterAlarm";
-import { ConfirmModal } from "@/components/models/ConfirmModal";
-import { PlusCircle, PencilSquare, Trash2, Copy, Clock, CalendarX, CheckCircle, ExclamationTriangle, MusicNoteBeamed, VolumeUp, Bell } from "react-bootstrap-icons";
-import { PRESET_WARNING_CHIMES } from "@/config/chimes";
+import React, { useState, useEffect, useMemo } from "react"
+import { Container, Row, Col, Button, Table, Card, Badge, Modal, Form } from "react-bootstrap"
+import { useReactTable, getCoreRowModel, getSortedRowModel } from "@tanstack/react-table"
+import CommonUtils from "@/services/CommonUtils"
+import { AlterAlarm } from "@/components/models/AlterAlarm"
+import { ConfirmModal } from "@/components/models/ConfirmModal"
+import { PlusCircle, PencilSquare, Trash2, Copy, Clock, CalendarX, CheckCircle, ExclamationTriangle } from "react-bootstrap-icons"
+import { PRESET_WARNING_CHIMES } from "@/config/chimes"
+import { DAYS_OF_WEEK, API_ENDPOINTS } from "@/config/constants"
 
 const dayInitials = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
 export default function EditAlarms({ useStore }) {
-  const [activeDay, setActiveDay] = useState("");
-  const alarms = useStore((state) => state.alarms);
-  const setAlarms = useStore((state) => state.setAlarms);
-  const user = useStore((state) => state.user);
-  const currentScheduleId = useStore((state) => state.currentScheduleId);
-  const userSounds = useStore((state) => state.userSounds);
-  const warningLeadMinutes = useStore((state) => state.warningLeadMinutes);
-  const [sorting, setSorting] = React.useState([{ id: "start_time", desc: false }]);
-  const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const [activeDay, setActiveDay] = useState("")
+  const alarms = useStore((state) => state.alarms)
+  const setAlarms = useStore((state) => state.setAlarms)
+  const user = useStore((state) => state.user)
+  const currentScheduleId = useStore((state) => state.currentScheduleId)
+  const userSounds = useStore((state) => state.userSounds)
+  const warningLeadMinutes = useStore((state) => state.warningLeadMinutes)
+  const [sorting, setSorting] = React.useState([{ id: "start_time", desc: false }])
 
   const [showModal, setShowModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -57,14 +57,14 @@ export default function EditAlarms({ useStore }) {
   };
 
   const confirmDelete = async () => {
-    if (!pendingDelete) return;
+    if (!pendingDelete) return
 
     try {
-      const response = await fetch("/api/alarms", {
+      const response = await fetch(API_ENDPOINTS.ALARMS, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: pendingDelete.id }),
-      });
+      })
 
       if (response.ok) {
         setAlarms({
@@ -84,10 +84,10 @@ export default function EditAlarms({ useStore }) {
   };
 
   const handleSaveAlarm = async (alarmToSave) => {
-    setValidationError(null);
-    const isUpdating = !!alarmToSave.id;
-    const method = isUpdating ? "PATCH" : "PUT";
-    const endpoint = "/api/alarms";
+    setValidationError(null)
+    const isUpdating = !!alarmToSave.id
+    const method = isUpdating ? "PATCH" : "PUT"
+    const endpoint = API_ENDPOINTS.ALARMS
 
     const body = isUpdating
       ? { id: alarmToSave.id, start_time: alarmToSave.start_time, end_time: alarmToSave.end_time, label: alarmToSave.label, play_sound: alarmToSave.play_sound, sound_id: alarmToSave.sound_id, play_warning_sound: alarmToSave.play_warning_sound, warning_sound_id: alarmToSave.warning_sound_id }
@@ -95,12 +95,12 @@ export default function EditAlarms({ useStore }) {
           ...alarmToSave,
           user_id: user.id,
           schedule_id: currentScheduleId,
-          day_of_week: daysOfWeek.indexOf(activeDay),
+          day_of_week: DAYS_OF_WEEK.indexOf(activeDay),
           play_sound: alarmToSave.play_sound || false,
           sound_id: alarmToSave.sound_id || null,
           play_warning_sound: alarmToSave.play_warning_sound || false,
           warning_sound_id: alarmToSave.warning_sound_id || null,
-        };
+        }
 
     try {
       const response = await fetch(endpoint, {
@@ -136,12 +136,12 @@ export default function EditAlarms({ useStore }) {
   };
 
   const performCopy = async (fromDay, toDay) => {
-    setLoading(true);
-    const alarmsToCopy = alarms[fromDay] || [];
-    const toDayIndex = daysOfWeek.indexOf(toDay);
+    setLoading(true)
+    const alarmsToCopy = alarms[fromDay] || []
+    const toDayIndex = DAYS_OF_WEEK.indexOf(toDay)
 
     try {
-      const deleteResponse = await fetch("/api/alarms", {
+      const deleteResponse = await fetch(API_ENDPOINTS.ALARMS, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -149,7 +149,7 @@ export default function EditAlarms({ useStore }) {
           schedule_id: currentScheduleId,
           day_of_week: toDayIndex,
         }),
-      });
+      })
 
       if (!deleteResponse.ok) {
         console.error(`Failed to delete existing alarms for ${toDay}`);
@@ -160,7 +160,7 @@ export default function EditAlarms({ useStore }) {
       const copiedAlarms = [];
       for (const alarm of alarmsToCopy) {
         try {
-          const response = await fetch("/api/alarms", {
+          const response = await fetch(API_ENDPOINTS.ALARMS, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -171,7 +171,7 @@ export default function EditAlarms({ useStore }) {
               end_time: alarm.end_time,
               label: alarm.label,
             }),
-          });
+          })
           const newAlarm = await response.json();
           if (response.ok) {
             copiedAlarms.push(newAlarm);
@@ -393,7 +393,7 @@ export default function EditAlarms({ useStore }) {
       <Card className="border-0 shadow-sm mb-4">
         <Card.Body className="py-3">
           <div className="d-flex align-items-center justify-content-center gap-2 flex-wrap">
-            {daysOfWeek.map((day, index) => (
+            {DAYS_OF_WEEK.map((day, index) => (
               <button
                 key={day}
                 type="button"
@@ -470,7 +470,7 @@ export default function EditAlarms({ useStore }) {
             <h5 className="fw-bold mb-0">Copy Timers to...</h5>
           </div>
           <div className="d-flex flex-wrap gap-2">
-            {daysOfWeek
+            {DAYS_OF_WEEK
               .filter((day) => day !== activeDay)
               .map((day) => (
                 <Button
