@@ -25,4 +25,12 @@ export const useStore = create((set) => ({
   setAudioSrc: (src) => set({ audioSrc: src }),
   isPlaying: false,
   setIsPlaying: (playing) => set({ isPlaying: playing }),
+  userSounds: [],
+  setUserSounds: (sounds) => set({ userSounds: sounds }),
+  defaultSound: null,
+  setDefaultSound: (url) => set({ defaultSound: url }),
+  warningLeadMinutes: 3,
+  setWarningLeadMinutes: (minutes) => set({ warningLeadMinutes: minutes }),
+  warningChimeId: null,
+  setWarningChimeId: (id) => set({ warningChimeId: id }),
 }));

@@ -59,4 +59,7 @@ opencode.json
 
 # Added by ggshield
 .cache_ggshield
+
+# AI
 docs/
+.agents/

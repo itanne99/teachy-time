@@ -1,165 +1,85 @@
 # Agent Instructions & Project Conventions
 
 **Project:** Teachy Time
-**Stack:** React 19, Next.js 16, JavaScript (ESM)
+**Stack:** React 19, Next.js 15/16, JavaScript (ESM), Bootstrap 5
 
-This document provides definitive instructions for AI coding agents operating within this repository. Adhering to these guidelines ensures consistency, maintainability, and alignment with existing project conventions. 
-
-There are currently no existing `.cursorrules` or `.github/copilot-instructions.md` files; these rules serve as the primary source of truth.
+This document outlines the conventions and best practices that AI coding agents must follow. It incorporates specialized guidelines for tRPC, SEO indexing, UI/UX design, database optimization, and launch-readiness checks.
 
 ---
 
 ## 1. Build, Lint, and Test Commands
 
-Navigate to this directory using the `workdir` parameter or execute commands with the correct path.
-
-### Build Commands
+Navigate to the workspace root to execute these commands:
 - **Install Dependencies:** `yarn install`
 - **Development Server:** `yarn run dev`
 - **Production Build:** `yarn run build`
 - **Start Production Server:** `yarn run start`
-
-### Linting Commands
-The project uses ESLint with a modern flat configuration (`eslint.config.mjs`). It includes `eslint-config-next` and `eslint-plugin-unicorn`.
 - **Run Linter:** `yarn run lint`
-- **Configuration Note:** Pay attention to custom rules in `eslint.config.mjs`.
-
-### Testing Commands
-*Note: A formal testing framework (e.g., Vitest or Jest) is not currently present in `package.json`. When one is introduced, use the following standard conventions.*
-- **Run All Tests:** `yarn run test`
-- **Run a Single Test File:** `npx vitest <path/to/test-file.test.js>`
-- **Run a Specific Test Case:** `npx vitest -t "test name to match"`
-- **Run Tests in Watch Mode:** `yarn run test:watch`
-- **Run Coverage:** `yarn run test:coverage`
-
-*(Always check `package.json` for updated test scripts before executing).*
+- **Run Tests:** `yarn run test` (or `npx vitest`)
 
 ---
 
-## 2. Code Style Guidelines
+## 2. General Code Style
 
-### 2.1. Language & Ecosystem
-- **JavaScript (ES2020+):** Use modern JavaScript features consistently (optional chaining, nullish coalescing, destructuring, spread syntax, template literals).
-- **No TypeScript:** While `typescript` is in `devDependencies`, the project currently uses pure JavaScript (`.js`, `.jsx`). Do not introduce `.ts` or `.tsx` files unless explicitly asked.
-- **Module System:** Use ES Modules (`import`/`export`).
+### 2.1 Language & Spacing
+- **JavaScript (ES2020+):** Use ES Modules (`import`/`export`). No TypeScript for source code (`.js`, `.jsx` only).
+- **Indentation:** Use 2 spaces for indentation.
+- **Quotes & Semicolons:** Use single quotes (`'`) for JS strings, double quotes (`"`) for JSX attributes. Omit semicolons where possible.
+- **No Unused Code:** Automatically run code cleanup before committing: remove dead imports, unused variables, and stale comments.
 
-### 2.2. Formatting & Linting
-- **Indentation & Spacing:** Use 2 spaces for indentation.
-- **Quotes:** Prefer single quotes (`'`) for strings in JS, and double quotes (`"`) for JSX attributes.
-- **Semicolons:** Omit semicolons where possible, as per standard modern JS conventions, unless it creates ambiguity.
-- **Lint Errors:** Always resolve ESLint errors before committing changes. Do not use `// eslint-disable-next-line` unless absolutely necessary and well-documented.
-
-### 2.3. Imports
-Group imports systematically at the top of the file to maintain readability:
-1. Core React/Next.js dependencies (`react`, `next/link`, etc.)
-2. Third-party libraries
-3. Internal context, hooks, or utilities (using `@/` alias where possible)
-4. Local components
-5. Assets (images, SVGs)
-6. Stylesheets (`.css`)
-
-```javascript
-// Example:
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/router';
-import { formatCurrency } from '@/utils/format';
-import Header from '@/components/Header';
-import logo from '@/assets/logo.svg';
-import './Dashboard.css';
-```
-
-### 2.4. React Components
-- **Functional Components:** Exclusively use functional components. Do not use class components.
-- **Hooks:** Use built-in React hooks (`useState`, `useEffect`, `useMemo`, `useCallback`) and Next.js hooks (`useRouter`).
-- **JSX:** Keep JSX clean and readable. Extract complex conditional logic or large loops into helper functions or sub-components.
-- **Props:** Destructure props in the function signature. Provide sensible default values for optional props.
-
-### 2.5. Naming Conventions
-- **Files & Directories:**
-  - Components: PascalCase (e.g., `PropertyCard.jsx`, `Layout.jsx`)
-  - Utilities/Hooks: camelCase (e.g., `formatDate.js`, `useAuth.js`)
-  - Assets: kebab-case (e.g., `hero-image.png`, `logo-dark.svg`)
-- **Variables & Functions:** camelCase (e.g., `userList`, `fetchData()`)
-- **Constants:** UPPER_SNAKE_CASE (e.g., `MAX_RETRY_COUNT`, `API_BASE_URL`)
-- **Components:** PascalCase (e.g., `UserProfile`)
-- **Event Handlers:** Prefix with `handle` (e.g., `handleSubmit`, `handleInputChange`). Prefix props with `on` (e.g., `onSubmit`).
-
-### 2.6. State Management
-- Lift state up only when necessary to share data between sibling components.
-- Prefer local component state (`useState`, `useReducer`) for UI-specific data (modals, toggles, form inputs).
-- Do not mutate state directly; always use the setter functions provided by the hook, utilizing the functional update form when new state depends on the previous state (`setCount(prev => prev + 1)`).
-
-### 2.7. Error Handling & Asynchronous Operations
-- **Async/Await:** Use `async`/`await` for asynchronous operations instead of `.then()` chains for better readability.
-- **Try/Catch:** Always wrap asynchronous network requests in `try/catch` blocks.
-- **User Feedback:** Ensure errors are surfaced gracefully in the UI (e.g., error messages, toast notifications, fallback UI) rather than just logging to the console.
-- **Cleanup:** Always provide cleanup functions in `useEffect` when setting up subscriptions, intervals, or event listeners.
-
-```javascript
-// Example Error Handling
-async function loadProperties() {
-  try {
-    setLoading(true);
-    setError(null);
-    const data = await fetchProperties();
-    setProperties(data);
-  } catch (error) {
-    console.error('Failed to load properties:', error);
-    setError('Could not load properties at this time. Please try again later.');
-  } finally {
-    setLoading(false);
-  }
-}
-```
-
-### 2.8. File & Folder Structure
-Adhere strictly to the existing directory architecture inside `src`:
-- `/components`: Reusable UI components.
-- `/pages`: Next.js pages (using Pages Router).
-- `/hooks`: Custom React hooks.
-- `/utils`: Helper functions, formatters, and constants.
-- `/logic`: Business logic and service integrations (e.g., `EmailJsLogic.js`).
-- `/styles`: Global and component-specific CSS.
-
-### 2.9. Styling & CSS
-- The project uses Bootstrap 5 with Bootswatch themes.
-- Use descriptive, semantic, and scoped class names.
-- Avoid inline styles (`style={{ ... }}`) unless strictly necessary for dynamic values.
-- Ensure interfaces are responsive and mobile-friendly using standard CSS media queries or Bootstrap grid.
-
-### 2.10. Code Comments & Documentation
-- **Why, not What:** Write comments that explain the *intent* or *business logic* behind complex code, not simply repeating what the code does.
-- Keep comments up-to-date with code changes. Remove stale comments immediately.
-- Avoid redundant comments for obvious code.
-- Provide JSDoc headers for complex utility functions that require parameter and return value explanations.
-
-### 2.11. Agent Specific Directives
-- **Verification:** Always run `yarn run lint` AND `yarn test` to verify there are no errors after writing or modifying code.
-- **Unit Test Integrity:** Never modify unit tests just to make them pass. If a test fails, investigate and fix the implementation first. Only update the test if the underlying business logic or API interface has intentionally changed.
-- **API Testing:** All new API endpoints MUST include unit tests covering happy, edge, and bad cases (e.g., missing fields, unauthorized access, DB errors). Tests should be placed in the `tests/api` directory and use Vitest with `node-mocks-http`.
-- **Dependency Management:** Never add a new yarn package without explicitly asking the user, unless it's strictly implied by the core requirement.
-- **Tool Usage:** Prefer specific file parsing tools (`read`, `edit`, `write`) over generic bash scripting when interacting with the codebase. Always use absolute paths.
-- **No Unsolicited Refactoring:** Only refactor code that is directly related to the user's explicit request. Do not "clean up" unrelated files.
-- **Do Not Alert User Made Changes:** While refactoring code if you think the change was made by the user. Do not try to adjust it unless asked to by the user.
+### 2.2 React Component Construction
+- **Components:** Exclusively functional components, destructuring props with default parameters.
+- **State:** Lift state only when sharing with siblings. Use functional updates (`setCount(prev => prev + 1)`) to avoid race conditions.
+- **Waterfalls:** Never chain sequential awaits. Run independent operations concurrently using `Promise.all()` or stream non-essential data using Suspense boundaries.
+- **Imports:** Avoid barrel file imports (e.g. `import { Icon } from 'lucide-react'`). Import directly from source paths to reduce dev start times and cold-start latency.
 
 ---
 
-## 3. Development Workflow
+## 3. Specialized Stack Guidelines
 
-### 3.1. Branching Policy
-- **New Branch for Every Change:** ALWAYS open a new feature branch for any code changes. Unless you are in a new feature branch already.
-- **Base Branch:** Use `dev-ido` as your local base branch.
-- **No Direct Commits to Main:** NEVER make changes to the `main` branch directly.
+### 3.1 tRPC Fullstack APIs
+- **Type Safety:** Ensure types flow cleanly from server routers directly to client queries/mutations.
+- **Middlewares:** Implement rate-limiting, authentication, and context scoping cleanly inside router procedures.
+- **Query/Mutation Separation:** Use queries for reads (idempotent, cacheable) and mutations for writes (state-altering).
 
-### 3.2. Synchronizing with Upstream
-- **Up-to-Date Check:** Always verify that the `dev-ido` branch is up-to-date with the `dev` branch (`origin/dev`) before starting work.
-- **Merge Conflict Protocol:** If merge conflicts occur during synchronization, STOP and notify the user. Let the user address conflicts manually.
+### 3.2 SEO Indexing & Metadata
+- **Canonical URLs:** Every page must include an absolute canonical URL alternates metadata. Never use relative paths.
+- **Raw HTML Meta:** All metadata (OG tags, Twitter cards, descriptions) must be present in the raw HTML response. Put them in standard layouts/pages instead of client-side additions.
+- **Static Render Check:** Important pages (like homepage, blog, public tools) must render statically (`○` or `●` in build output). Use `generateStaticParams` for dynamic routes to ensure they are pre-rendered.
+- **Robots & Sitemaps:** Ensure `robots.txt` points to `sitemap.xml` and returns `200` with valid XML format. Do not block search crawlers on key routes.
+
+### 3.3 UI/UX Design System (Bootstrap 5 & Bootstrap Icons)
+- **SVG Icons:** Use consistent SVG icons from `react-bootstrap-icons`. Never use emojis as interactive icons.
+- **Interactivity:** Every clickable element must have `cursor-pointer`, a smooth hover transition (`duration-200`), and a visible focus state for keyboard navigation.
+- **Layout Consistency:** Maintain container max-widths, responsive paddings, and ensure no horizontal scrolls exist on mobile screen sizes (375px/768px).
+
+### 3.4 Supabase & Postgres Database
+- **Index FKs:** Always index foreign key columns and any fields frequently used in `WHERE` or `JOIN` conditions.
+- **Covering & Partial Indexes:** Use covering indexes (`INCLUDE` clause) to avoid table heap lookups, and partial indexes (`WHERE` clause) to keep indexes small and fast for filtered queries.
+- **Connection Limits:** Calculate connection limits based on available memory and use connection pooling (PgBouncer) for concurrent applications.
+
+### 3.5 Pakistani Payments Integration (PKR Stack)
+- **Webhook Durability:** webhook handling must be resilient. Idempotently log event IDs to prevent duplicate charging, handle signature verification, and return a fast `200 OK` response.
+- **Reconciliation:** Log payment status transitions clearly in the database for tracking.
+
+---
+
+## 4. Production QA & Definition of Done
+
+A task is not complete until it passes the following checklist:
+- [ ] Code compiles without errors (`npx tsc --noEmit` if type-checking is active).
+- [ ] ESLint lints clean with 0 warnings (`yarn run lint`).
+- [ ] Unit tests pass cleanly.
+- [ ] Build command finishes successfully (`yarn run build`).
+- [ ] No secrets, passwords, API keys, or `localhost:3000` URLs are staged in git diffs.
+- [ ] Commits are descriptively scoped (e.g. `feat(seo): add canonical tags`).
+
+---
 
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **teachy-time** (489 symbols, 695 relationships, 14 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **teachy-time** (691 symbols, 1003 relationships, 26 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 

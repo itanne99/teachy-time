@@ -52,7 +52,7 @@ export default async function handler(req, res) {
         // This endpoint assumes the user has already clicked the reset link
         // and their session has been set on the client-side using the token from the URL.
         // Therefore, the user is already authenticated when this request is made.
-        const { data, error } = await supabase.auth.updateUser({
+               const { error } = await supabase.auth.updateUser({
           password: password,
           captchaToken: code || undefined, // Optional, if you want to verify captcha
         });

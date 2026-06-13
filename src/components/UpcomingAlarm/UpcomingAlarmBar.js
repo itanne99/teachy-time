@@ -1,13 +1,41 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { ProgressBar, Badge } from "react-bootstrap";
 import CommonUtils from "@/services/CommonUtils";
 import { useStore } from "@/services/useStore";
 import { Clock, HourglassSplit, CheckCircle } from "react-bootstrap-icons";
+import { resolveSoundUrl, DEFAULT_CHIME_URL, DEFAULT_WARNING_CHIME_URL, findPresetChime, findPresetWarningChime } from "@/config/chimes";
 
 function UpcomingAlarmBar({ alarms }) {
   const setIsPlaying = useStore((state) => state.setIsPlaying);
   const setAudioSrc = useStore((state) => state.setAudioSrc);
-  const defaultChime = "https://mgsqrwnwppjmijenbfys.supabase.co/storage/v1/object/public/chimes/public/wind-chimes-37762.mp3";
+  const defaultSound = useStore((state) => state.defaultSound);
+  const userSounds = useStore((state) => state.userSounds);
+  const warningLeadMinutes = useStore((state) => state.warningLeadMinutes);
+  const warningChimeId = useStore((state) => state.warningChimeId);
+
+  const resolveAudioSrc = useCallback((alarm) => {
+    if (!alarm) return DEFAULT_CHIME_URL;
+    return resolveSoundUrl(alarm.sound_id, userSounds, defaultSound, DEFAULT_CHIME_URL);
+  }, [userSounds, defaultSound]);
+
+  const resolveWarningAudioSrc = useCallback((alarm) => {
+    if (!alarm?.play_warning_sound) return null;
+    if (alarm.warning_sound_id) {
+      const warningPreset = findPresetWarningChime(alarm.warning_sound_id);
+      if (warningPreset) return warningPreset.url;
+      const regularPreset = findPresetChime(alarm.warning_sound_id);
+      if (regularPreset) return regularPreset.url;
+      return resolveSoundUrl(alarm.warning_sound_id, userSounds, defaultSound, DEFAULT_WARNING_CHIME_URL);
+    }
+    if (warningChimeId) {
+      const warningPreset = findPresetWarningChime(warningChimeId);
+      if (warningPreset) return warningPreset.url;
+      const regularPreset = findPresetChime(warningChimeId);
+      if (regularPreset) return regularPreset.url;
+      return resolveSoundUrl(warningChimeId, userSounds, defaultSound, DEFAULT_WARNING_CHIME_URL);
+    }
+    return DEFAULT_WARNING_CHIME_URL;
+  }, [userSounds, defaultSound, warningChimeId]);
 
   const [currentAlarm, setCurrentAlarm] = useState(null);
   const [nextAlarm, setNextAlarm] = useState(null);
@@ -21,6 +49,7 @@ function UpcomingAlarmBar({ alarms }) {
 
   const lastAlarmIdRef = useRef(null);
   const endAlarmTimeoutRef = useRef(null);
+  const warningTriggeredRef = useRef(new Set());
 
   useEffect(() => {
     const findActiveAndNextSegments = () => {
@@ -62,8 +91,34 @@ function UpcomingAlarmBar({ alarms }) {
       }
 
       if (lastAlarmIdRef.current && (!activeSegment || activeSegment.id !== lastAlarmIdRef.current)) {
-        setAudioSrc(defaultChime);
+        const src = resolveAudioSrc(activeSegment || lastAlarmIdRef.current ? alarms.find(a => a.id === lastAlarmIdRef.current) : null);
+        setAudioSrc(src);
         setIsPlaying(true);
+      }
+
+      if (activeSegment && activeSegment.play_warning_sound) {
+        const warningKey = activeSegment.id;
+        if (!warningTriggeredRef.current.has(warningKey)) {
+          const [endHour, endMinute] = activeSegment.end_time.split(":").map(Number);
+          let segmentEndTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endHour, endMinute, 0);
+          if (segmentEndTime < new Date(now.getFullYear(), now.getMonth(), now.getDate(), activeSegment.start_time.split(":").map(Number)[0], activeSegment.start_time.split(":").map(Number)[1], 0)) {
+            segmentEndTime.setDate(segmentEndTime.getDate() + 1);
+          }
+          const warningThresholdMs = warningLeadMinutes * 60 * 1000;
+          const timeUntilEnd = segmentEndTime.getTime() - now.getTime();
+          if (timeUntilEnd > 0 && timeUntilEnd <= warningThresholdMs) {
+            warningTriggeredRef.current.add(warningKey);
+            const warningSrc = resolveWarningAudioSrc(activeSegment);
+            if (warningSrc) {
+              setAudioSrc(warningSrc);
+              setIsPlaying(true);
+            }
+          }
+        }
+      }
+
+      if (!activeSegment) {
+        warningTriggeredRef.current.clear();
       }
 
       setCurrentAlarm(activeSegment);
@@ -124,7 +179,7 @@ function UpcomingAlarmBar({ alarms }) {
         clearTimeout(endAlarmTimeoutRef.current);
       }
     };
-  }, [alarms, setIsPlaying, setAudioSrc]);
+  }, [alarms, setIsPlaying, setAudioSrc, defaultSound, userSounds, warningLeadMinutes, warningChimeId, resolveAudioSrc, resolveWarningAudioSrc]);
 
   useEffect(() => {
     if (!currentAlarm || segmentDuration <= 0) {
