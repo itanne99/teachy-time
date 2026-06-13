@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { ProgressBar, Badge } from "react-bootstrap";
 import CommonUtils from "@/services/CommonUtils";
 import { useStore } from "@/services/useStore";
@@ -13,12 +13,12 @@ function UpcomingAlarmBar({ alarms }) {
   const warningLeadMinutes = useStore((state) => state.warningLeadMinutes);
   const warningChimeId = useStore((state) => state.warningChimeId);
 
-  const resolveAudioSrc = (alarm) => {
+  const resolveAudioSrc = useCallback((alarm) => {
     if (!alarm) return DEFAULT_CHIME_URL;
     return resolveSoundUrl(alarm.sound_id, userSounds, defaultSound, DEFAULT_CHIME_URL);
-  };
+  }, [userSounds, defaultSound]);
 
-  const resolveWarningAudioSrc = (alarm) => {
+  const resolveWarningAudioSrc = useCallback((alarm) => {
     if (!alarm?.play_warning_sound) return null;
     if (alarm.warning_sound_id) {
       const warningPreset = findPresetWarningChime(alarm.warning_sound_id);
@@ -35,7 +35,7 @@ function UpcomingAlarmBar({ alarms }) {
       return resolveSoundUrl(warningChimeId, userSounds, defaultSound, DEFAULT_WARNING_CHIME_URL);
     }
     return DEFAULT_WARNING_CHIME_URL;
-  };
+  }, [userSounds, defaultSound, warningChimeId]);
 
   const [currentAlarm, setCurrentAlarm] = useState(null);
   const [nextAlarm, setNextAlarm] = useState(null);
@@ -179,7 +179,7 @@ function UpcomingAlarmBar({ alarms }) {
         clearTimeout(endAlarmTimeoutRef.current);
       }
     };
-  }, [alarms, setIsPlaying, setAudioSrc, defaultSound, userSounds, warningLeadMinutes, warningChimeId]);
+  }, [alarms, setIsPlaying, setAudioSrc, defaultSound, userSounds, warningLeadMinutes, warningChimeId, resolveAudioSrc, resolveWarningAudioSrc]);
 
   useEffect(() => {
     if (!currentAlarm || segmentDuration <= 0) {

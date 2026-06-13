@@ -16,7 +16,6 @@ export default function EditAlarms({ useStore }) {
   const user = useStore((state) => state.user);
   const currentScheduleId = useStore((state) => state.currentScheduleId);
   const userSounds = useStore((state) => state.userSounds);
-  const defaultSound = useStore((state) => state.defaultSound);
   const warningLeadMinutes = useStore((state) => state.warningLeadMinutes);
   const [sorting, setSorting] = React.useState([{ id: "start_time", desc: false }]);
   const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -338,7 +337,7 @@ export default function EditAlarms({ useStore }) {
         ),
       },
     ],
-    [alarms, activeDay]
+    [alarms, activeDay, setAlarms, userSounds, warningLeadMinutes]
   );
 
   const table = useReactTable({
