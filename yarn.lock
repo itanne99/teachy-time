@@ -304,17 +304,10 @@
   resolved "https://registry.npmjs.org/@next/env/-/env-15.5.9.tgz"
   integrity sha512-4GlTZ+EJM7WaW2HEZcyU317tIQDjkQIyENDLxYJfSWlfqguN+dHkZgyQTV/7ykvobU7yEH5gKvreNrH4B6QgIg==
 
-"@next/eslint-plugin-next@15.5.2":
-  version "15.5.2"
-  resolved "https://registry.npmjs.org/@next/eslint-plugin-next/-/eslint-plugin-next-15.5.2.tgz"
-  integrity sha512-lkLrRVxcftuOsJNhWatf1P2hNVfh98k/omQHrCEPPriUypR6RcS13IvLdIrEvkm9AH2Nu2YpR5vLqBuy6twH3Q==
-  dependencies:
-    fast-glob "3.3.1"
-
-"@next/eslint-plugin-next@^16.2.0":
-  version "16.2.9"
-  resolved "https://registry.npmjs.org/@next/eslint-plugin-next/-/eslint-plugin-next-16.2.9.tgz"
-  integrity sha512-UZi8+YT/MLgTC9nrrn2Xd4lBYv1B7lVmtWHfPcthAI5Tt/C1LuDe6DfmtCtJ+WQod3ksY4VrKSvk3oMVAnL7qw==
+"@next/eslint-plugin-next@15.5.19", "@next/eslint-plugin-next@^15.5.9":
+  version "15.5.19"
+  resolved "https://registry.yarnpkg.com/@next/eslint-plugin-next/-/eslint-plugin-next-15.5.19.tgz#c7e5c6e356b3aea2c9ea2d6da56a8083289866bd"
+  integrity sha512-Ctwb4qYuMbHN/1oXLlTdMchwG8h8Xzwq+wGZZMgF3o6+uwyBKAI2c96bdOsl+C62PaUD0Jkh+QpNkhUeDlam0Q==
   dependencies:
     fast-glob "3.3.1"
 
@@ -1422,12 +1415,12 @@ escape-string-regexp@^4.0.0:
   resolved "https://registry.npmjs.org/escape-string-regexp/-/escape-string-regexp-4.0.0.tgz"
   integrity sha512-TtpcNJ3XAzx3Gq8sWRzJaVajRs0uVxA2YAkdb1jm2YkPz4G6egUFAyA3n5vtEIZefPk5Wa4UXbKuS5fKkJWdgA==
 
-eslint-config-next@15.5.2:
-  version "15.5.2"
-  resolved "https://registry.npmjs.org/eslint-config-next/-/eslint-config-next-15.5.2.tgz"
-  integrity sha512-3hPZghsLupMxxZ2ggjIIrat/bPniM2yRpsVPVM40rp8ZMzKWOJp2CGWn7+EzoV2ddkUr5fxNfHpF+wU1hGt/3g==
+eslint-config-next@^15.5.9:
+  version "15.5.19"
+  resolved "https://registry.yarnpkg.com/eslint-config-next/-/eslint-config-next-15.5.19.tgz#5133053bf8fa390f8047158b6a55cecd4f9b6c4e"
+  integrity sha512-UZwkuhBCNxVZfo93MSHRDOVNWXooJJGcAUyTAVIp0+9QFhH4SqJxWY0s6Mk9C2kMi777HPMn3dseOrZshWpG9Q==
   dependencies:
-    "@next/eslint-plugin-next" "15.5.2"
+    "@next/eslint-plugin-next" "15.5.19"
     "@rushstack/eslint-patch" "^1.10.3"
     "@typescript-eslint/eslint-plugin" "^5.4.2 || ^6.0.0 || ^7.0.0 || ^8.0.0"
     "@typescript-eslint/parser" "^5.4.2 || ^6.0.0 || ^7.0.0 || ^8.0.0"
