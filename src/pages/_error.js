@@ -2,11 +2,11 @@ import Link from 'next/link'
 import React, { useEffect } from 'react'
 import { Container } from 'react-bootstrap'
 
-function _error(props) {
+function ErrorPage(props) {
 
   useEffect(() => {
     console.error(`props:`, props);
-  }, [])
+  }, [props])
 
   return (
     <Container fluid className="d-flex flex-grow-1 align-items-center justify-content-center">
@@ -22,4 +22,4 @@ function _error(props) {
   )
 }
 
-export default _error
+export default ErrorPage
