@@ -1,4 +1,4 @@
-const DEFAULT_CHIME_URL = "https://mgsqrwnwppjmijenbfys.supabase.co/storage/v1/object/public/chimes/public/wind-chimes-37762.mp3";
+export const DEFAULT_CHIME_URL = "https://mgsqrwnwppjmijenbfys.supabase.co/storage/v1/object/public/chimes/public/wind-chimes-37762.mp3";
 
 export const CHIME_CATEGORIES = ["Gentle", "Standard", "Urgent", "Fun"];
 
