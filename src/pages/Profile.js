@@ -50,7 +50,6 @@ export default function Profile() {
   const [deleteAffectedCount, setDeleteAffectedCount] = useState(0);
   const [toast, setToast] = useState({ show: false, message: "", variant: "success" });
   const [playingSoundId, setPlayingSoundId] = useState(null);
-  const [playProgress, setPlayProgress] = useState(0);
   const [warningLeadMinutes, setWarningLeadMinutesLocal] = useState(3);
   const [warningChimeId, setWarningChimeIdLocal] = useState(null);
   const [warningSaving, setWarningSaving] = useState(false);
@@ -61,7 +60,6 @@ export default function Profile() {
     return () => {
       if (audioPreviewRef.current) {
         audioPreviewRef.current.pause();
-        audioPreviewRef.current.ontimeupdate = null;
       }
     };
   }, []);
@@ -269,30 +267,19 @@ export default function Profile() {
     if (playingSoundId === sound.id) {
       if (audioPreviewRef.current) {
         audioPreviewRef.current.pause();
-        audioPreviewRef.current.ontimeupdate = null;
       }
       setPlayingSoundId(null);
-      setPlayProgress(0);
     } else {
       if (audioPreviewRef.current) {
         audioPreviewRef.current.pause();
-        audioPreviewRef.current.ontimeupdate = null;
       }
       const url = sound.storage_url || sound.url;
       const audio = new Audio(url);
       audioPreviewRef.current = audio;
       setPlayingSoundId(sound.id);
-      setPlayProgress(0);
-
-      audio.ontimeupdate = () => {
-        if (audio.duration) {
-          setPlayProgress((audio.currentTime / audio.duration) * 100);
-        }
-      };
 
       audio.onended = () => {
         setPlayingSoundId(null);
-        setPlayProgress(0);
       };
 
       audio.play().catch((err) => console.error("Audio preview failed:", err));
@@ -552,7 +539,7 @@ export default function Profile() {
                   sound={sound}
                   isDefault={sound.id === defaultSoundId}
                   isPlaying={playingSoundId === sound.id}
-                  playProgress={playProgress}
+                  activeAudio={playingSoundId === sound.id ? audioPreviewRef.current : null}
                   onSetDefault={handleSetDefaultSound}
                   onPlayPreview={handlePlayPreview}
                   onDelete={requestDeleteSound}
@@ -587,7 +574,7 @@ export default function Profile() {
                       sound={chime}
                       isDefault={chime.id === defaultSoundId}
                       isPlaying={playingSoundId === chime.id}
-                      playProgress={playProgress}
+                      activeAudio={playingSoundId === chime.id ? audioPreviewRef.current : null}
                       onSetDefault={handleSetDefaultSound}
                       onPlayPreview={handlePlayPreview}
                       isCustom={false}

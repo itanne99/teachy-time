@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { Card, Badge, Button } from 'react-bootstrap'
 import { MusicNoteBeamed, Star, PlayFill, StopFill, Trash2 } from 'react-bootstrap-icons'
 
@@ -5,12 +6,34 @@ export default function ChimeCard({
   sound,
   isDefault = false,
   isPlaying = false,
-  playProgress = 0,
+  activeAudio = null,
   onSetDefault,
   onPlayPreview,
   onDelete = null,
   isCustom = false
 }) {
+  const progressBarRef = useRef(null)
+
+  useEffect(() => {
+    if (!isPlaying || !activeAudio) return
+
+    let animationFrameId
+
+    const updateProgress = () => {
+      if (activeAudio.duration && progressBarRef.current) {
+        const progress = (activeAudio.currentTime / activeAudio.duration) * 100
+        progressBarRef.current.style.width = `${progress}%`
+      }
+      animationFrameId = requestAnimationFrame(updateProgress)
+    }
+
+    animationFrameId = requestAnimationFrame(updateProgress)
+
+    return () => {
+      cancelAnimationFrame(animationFrameId)
+    }
+  }, [isPlaying, activeAudio])
+
   return (
     <Card
       className={`h-100 border tt-sound-card position-relative overflow-hidden ${isDefault ? 'border-primary border-2 animate-select' : 'border-light shadow-sm'}`}
@@ -102,11 +125,11 @@ export default function ChimeCard({
       )}
       {isPlaying && (
         <div
+          ref={progressBarRef}
           className="position-absolute bottom-0 start-0 bg-primary"
           style={{
             height: isCustom ? '4px' : '3px',
-            width: `${playProgress}%`,
-            transition: 'width 100ms linear'
+            width: '0%'
           }}
         />
       )}
