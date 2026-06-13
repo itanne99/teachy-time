@@ -1,5 +1,6 @@
 import createClient from "@/supabase/api";
 import supabaseService from "@/supabase/supabaseService";
+import { getAppConfig } from "@/services/configService";
 
 const ALLOWED_TYPES = ["audio/mpeg", "audio/wav", "audio/ogg", "audio/x-wav", "audio/mp3"];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -11,18 +12,6 @@ async function getAuthUserId(req, res) {
     return { userId: null, error: "Unauthorized" };
   }
   return { userId: user.id, error: null };
-}
-
-async function getMaxSounds(supabase) {
-  const { data, error } = await supabase
-    .from("app_config")
-    .select("value")
-    .eq("key", "max_sounds_per_user")
-    .single();
-  if (error || !data) {
-    return 10; // fallback default
-  }
-  return parseInt(data.value, 10);
 }
 
 export default async function handler(req, res) {
@@ -49,11 +38,12 @@ export default async function handler(req, res) {
           return res.status(200).json({ affectedAlarms: data?.length || 0 });
         }
 
-        const [{ data: sounds, error: soundsError }, { data: profile }, maxSounds] = await Promise.all([
+        const [{ data: sounds, error: soundsError }, { data: profile }, config] = await Promise.all([
           supabase.from("alarm_sounds").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
           supabase.from("profile").select("default_sound_id").eq("user_id", userId).single(),
-          getMaxSounds(supabase),
+          getAppConfig(supabase),
         ]);
+        const maxSounds = config.max_sounds_per_user;
 
         if (soundsError) throw soundsError;
 
@@ -89,10 +79,11 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: "File exceeds 5MB limit" });
         }
 
-        const [{ count: existingCount, error: countError }, maxSounds] = await Promise.all([
+        const [{ count: existingCount, error: countError }, config] = await Promise.all([
           supabase.from("alarm_sounds").select("id", { count: "exact", head: true }).eq("user_id", userId),
-          getMaxSounds(supabase),
+          getAppConfig(supabase),
         ]);
+        const maxSounds = config.max_sounds_per_user;
 
         if (countError) throw countError;
         if ((existingCount || 0) >= maxSounds) {
