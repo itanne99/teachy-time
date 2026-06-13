@@ -89,13 +89,13 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: "File exceeds 5MB limit" });
         }
 
-        const [{ data: existingCount, error: countError }, maxSounds] = await Promise.all([
+        const [{ count: existingCount, error: countError }, maxSounds] = await Promise.all([
           supabase.from("alarm_sounds").select("id", { count: "exact", head: true }).eq("user_id", userId),
           getMaxSounds(supabase),
         ]);
 
         if (countError) throw countError;
-        if ((existingCount?.length || 0) >= maxSounds) {
+        if ((existingCount || 0) >= maxSounds) {
           return res.status(400).json({ error: `Maximum sounds reached (${maxSounds}). Delete one to upload a new sound.` });
         }
 
