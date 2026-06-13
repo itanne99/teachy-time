@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, Alert, Spinner } from 'react-bootstrap';
-import { Clock, Tag, ExclamationTriangle, MusicNotes, VolumeUp, Bell } from 'react-bootstrap-icons';
+import { Clock, Tag, ExclamationTriangle, MusicNoteBeamed, VolumeUp, Bell } from 'react-bootstrap-icons';
 import { useStore } from '@/services/useStore';
 import { PRESET_CHIMES, PRESET_WARNING_CHIMES } from '@/config/chimes';
 
@@ -88,7 +88,7 @@ export const AlterAlarm = ({ show, onHide, onSave, alarm, day, validationError }
 
           <Form.Group className="mt-3" controlId="formAlarmSound">
             <Form.Label className="small fw-semibold text-muted">
-              <MusicNotes size={14} className="me-1" />
+              <MusicNoteBeamed size={14} className="me-1" />
               Play Sound
             </Form.Label>
             <div className="d-flex align-items-center gap-2">

@@ -226,3 +226,42 @@
 ::-webkit-scrollbar-thumb:hover {
   background: var(--bs-gray-500);
 }
+
+/* Custom Sound Card Interaction & Animations */
+.tt-sound-card {
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+  outline: none;
+}
+
+.tt-sound-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--tt-shadow-card-hover) !important;
+}
+
+.tt-sound-card:focus-visible {
+  box-shadow: 0 0 0 3px rgba(69, 130, 236, 0.3) !important;
+}
+
+@keyframes tt-bounce-select {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(69, 130, 236, 0);
+  }
+  30% {
+    transform: scale(1.04);
+    box-shadow: 0 0 12px rgba(69, 130, 236, 0.3);
+  }
+  70% {
+    transform: scale(0.98);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(69, 130, 236, 0);
+  }
+}
+
+.animate-select {
+  animation: tt-bounce-select 0.4s ease-out;
+}
+

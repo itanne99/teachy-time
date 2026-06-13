@@ -75,7 +75,10 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: "Missing required fields: name, fileData, fileType" });
         }
 
-        const ext = fileType.split("/")[1]?.replace("x-", "") || "mp3";
+        let ext = fileType.split("/")[1]?.replace("x-", "") || "mp3";
+        if (ext === "mpeg") {
+          ext = "mp3";
+        }
         const allowedExts = ["mp3", "wav", "ogg"];
         if (!allowedExts.includes(ext)) {
           return res.status(400).json({ error: `Invalid file type. Allowed: ${allowedExts.join(", ")}` });

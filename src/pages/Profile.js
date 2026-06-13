@@ -4,7 +4,8 @@ import supabase from "@/supabase/component";
 import { useRouter } from "next/router";
 import { useStore } from "@/services/useStore";
 import { UpdatePasswordModal } from "@/components/models/UpdatePassword";
-import { PersonCircle, Envelope, Key, PencilSquare, CheckCircle, Trash2, MusicNotes, Upload, PlayFill, StopFill, Star, Bell, Clock } from "react-bootstrap-icons";
+import { PersonCircle, Envelope, Key, PencilSquare, CheckCircle, Trash2, MusicNoteBeamed, Upload, Bell, Clock } from "react-bootstrap-icons";
+import ChimeCard from "@/components/ChimeCard";
 import { PRESET_CHIMES, CHIME_CATEGORIES } from "@/config/chimes";
 
 const getUserProfileAndSession = async () => {
@@ -49,11 +50,21 @@ export default function Profile() {
   const [deleteAffectedCount, setDeleteAffectedCount] = useState(0);
   const [toast, setToast] = useState({ show: false, message: "", variant: "success" });
   const [playingSoundId, setPlayingSoundId] = useState(null);
+  const [playProgress, setPlayProgress] = useState(0);
   const [warningLeadMinutes, setWarningLeadMinutesLocal] = useState(3);
   const [warningChimeId, setWarningChimeIdLocal] = useState(null);
   const [warningSaving, setWarningSaving] = useState(false);
   const audioPreviewRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (audioPreviewRef.current) {
+        audioPreviewRef.current.pause();
+        audioPreviewRef.current.ontimeupdate = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const fetchSessionAndUser = async () => {
@@ -256,16 +267,35 @@ export default function Profile() {
 
   const handlePlayPreview = (sound) => {
     if (playingSoundId === sound.id) {
-      audioPreviewRef.current?.pause();
+      if (audioPreviewRef.current) {
+        audioPreviewRef.current.pause();
+        audioPreviewRef.current.ontimeupdate = null;
+      }
       setPlayingSoundId(null);
+      setPlayProgress(0);
     } else {
       if (audioPreviewRef.current) {
         audioPreviewRef.current.pause();
+        audioPreviewRef.current.ontimeupdate = null;
       }
-      audioPreviewRef.current = new Audio(sound.storage_url);
-      audioPreviewRef.current.play();
+      const url = sound.storage_url || sound.url;
+      const audio = new Audio(url);
+      audioPreviewRef.current = audio;
       setPlayingSoundId(sound.id);
-      audioPreviewRef.current.onended = () => setPlayingSoundId(null);
+      setPlayProgress(0);
+
+      audio.ontimeupdate = () => {
+        if (audio.duration) {
+          setPlayProgress((audio.currentTime / audio.duration) * 100);
+        }
+      };
+
+      audio.onended = () => {
+        setPlayingSoundId(null);
+        setPlayProgress(0);
+      };
+
+      audio.play().catch((err) => console.error("Audio preview failed:", err));
     }
   };
 
@@ -365,12 +395,12 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <Container className="py-4">
-        <div className="text-center py-5">
+      <div className="d-flex align-items-center justify-content-center min-vh-100">
+        <div className="text-center">
           <Spinner animation="border" variant="primary" className="mb-3" />
           <p className="text-muted mb-0">Loading profile...</p>
         </div>
-      </Container>
+      </div>
     );
   }
 
@@ -476,7 +506,7 @@ export default function Profile() {
           <div className="d-flex align-items-center justify-content-between">
             <div className="d-flex align-items-center gap-3">
               <span className="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 rounded-circle" style={{ width: "48px", height: "48px" }}>
-                <MusicNotes size={28} className="text-primary" />
+                <MusicNoteBeamed size={28} className="text-primary" />
               </span>
               <div>
                 <h5 className="fw-bold mb-0">Sound Library</h5>
@@ -518,57 +548,16 @@ export default function Profile() {
           <Row className="g-3">
             {userSounds.map((sound) => (
               <Col key={sound.id} xs={12} sm={6} lg={4}>
-                <Card className={`h-100 border ${sound.id === defaultSoundId ? "border-primary border-2" : "border-0 shadow-sm"}`}>
-                  <Card.Body className="p-3">
-                    <div className="d-flex align-items-start justify-content-between mb-2">
-                      <div className="d-flex align-items-center gap-2 flex-grow-1 min-w-0">
-                        <MusicNotes size={18} className="text-primary flex-shrink-0" />
-                        <div className="min-w-0">
-                          <h6 className="mb-0 text-truncate" title={sound.name}>{sound.name}</h6>
-                          <small className="text-muted">{new Date(sound.created_at).toLocaleDateString()}</small>
-                        </div>
-                      </div>
-                      {sound.id === defaultSoundId && (
-                        <Badge bg="primary" pill className="flex-shrink-0">
-                          <Star size={10} className="me-1" />
-                          Default
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="d-flex align-items-center gap-2 mt-2">
-                      <Button
-                        variant="outline-secondary"
-                        size="sm"
-                        onClick={() => handlePlayPreview(sound)}
-                        className="flex-grow-1"
-                      >
-                        {playingSoundId === sound.id ? (
-                          <><StopFill size={14} className="me-1" /> Stop</>
-                        ) : (
-                          <><PlayFill size={14} className="me-1" /> Play</>
-                        )}
-                      </Button>
-                      {sound.id !== defaultSoundId && (
-                        <Button
-                          variant="outline-primary"
-                          size="sm"
-                          onClick={() => handleSetDefaultSound(sound.id)}
-                          title="Set as default"
-                        >
-                          <Star size={14} />
-                        </Button>
-                      )}
-                      <Button
-                        variant="outline-danger"
-                        size="sm"
-                        onClick={() => requestDeleteSound(sound)}
-                        title="Delete"
-                      >
-                        <Trash2 size={14} />
-                      </Button>
-                    </div>
-                  </Card.Body>
-                </Card>
+                <ChimeCard
+                  sound={sound}
+                  isDefault={sound.id === defaultSoundId}
+                  isPlaying={playingSoundId === sound.id}
+                  playProgress={playProgress}
+                  onSetDefault={handleSetDefaultSound}
+                  onPlayPreview={handlePlayPreview}
+                  onDelete={requestDeleteSound}
+                  isCustom={true}
+                />
               </Col>
             ))}
           </Row>
@@ -579,7 +568,7 @@ export default function Profile() {
         <Card.Header className="bg-white border-0 py-3">
           <div className="d-flex align-items-center gap-3">
             <span className="d-inline-flex align-items-center justify-content-center bg-info bg-opacity-10 rounded-circle" style={{ width: "48px", height: "48px" }}>
-              <MusicNotes size={28} className="text-info" />
+              <MusicNoteBeamed size={28} className="text-info" />
             </span>
             <div>
               <h5 className="fw-bold mb-0">Preset Sounds</h5>
@@ -594,19 +583,15 @@ export default function Profile() {
               <Row className="g-2">
                 {PRESET_CHIMES.filter(c => c.category === category).map(chime => (
                   <Col key={chime.id} xs={6} sm={4} md={3} lg={2}>
-                    <Card className={`border ${chime.id === defaultSoundId ? "border-primary border-2" : "border-0 shadow-sm"} cursor-pointer`}
-                      style={{ cursor: "pointer" }}
-                      onClick={() => handleSetDefaultSound(chime.id)}>
-                      <Card.Body className="p-2 text-center">
-                        <MusicNotes size={20} className="text-primary mb-1" />
-                        <div className="small text-truncate" title={chime.name}>{chime.name}</div>
-                        {chime.id === defaultSoundId && (
-                          <Badge bg="primary" pill className="mt-1" style={{ fontSize: "0.65rem" }}>
-                            <Star size={8} className="me-1" />Default
-                          </Badge>
-                        )}
-                      </Card.Body>
-                    </Card>
+                    <ChimeCard
+                      sound={chime}
+                      isDefault={chime.id === defaultSoundId}
+                      isPlaying={playingSoundId === chime.id}
+                      playProgress={playProgress}
+                      onSetDefault={handleSetDefaultSound}
+                      onPlayPreview={handlePlayPreview}
+                      isCustom={false}
+                    />
                   </Col>
                 ))}
               </Row>

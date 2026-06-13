@@ -4,7 +4,7 @@ import { useReactTable, getCoreRowModel, getSortedRowModel } from "@tanstack/rea
 import CommonUtils from "@/services/CommonUtils";
 import { AlterAlarm } from "@/components/models/AlterAlarm";
 import { ConfirmModal } from "@/components/models/ConfirmModal";
-import { PlusCircle, PencilSquare, Trash2, Copy, Clock, CalendarX, CheckCircle, ExclamationTriangle, MusicNotes, VolumeUp, Bell } from "react-bootstrap-icons";
+import { PlusCircle, PencilSquare, Trash2, Copy, Clock, CalendarX, CheckCircle, ExclamationTriangle, MusicNoteBeamed, VolumeUp, Bell } from "react-bootstrap-icons";
 import { PRESET_WARNING_CHIMES } from "@/config/chimes";
 
 const dayInitials = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
