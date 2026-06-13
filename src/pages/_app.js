@@ -12,7 +12,6 @@ import { Agentation } from "agentation";
 
 export default function App({ Component, pageProps }) {
   const setAlarms = useStore((state) => state.setAlarms);
-  const alarms = useStore((state) => state.alarms);
   const setUser = useStore((state) => state.setUser);
   const setSession = useStore((state) => state.setSession);
   const setSchedules = useStore((state) => state.setSchedules);

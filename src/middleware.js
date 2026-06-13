@@ -1,4 +1,4 @@
-import { createServerClient, serializeCookieHeader } from '@supabase/ssr'
+import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 
 // Routes that require authentication

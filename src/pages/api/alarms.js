@@ -10,7 +10,7 @@ async function getAuthUserId(req, res) {
 }
 
 export default async function handler(req, res) {
-  const { method, query, body } = req;
+  const { method, body } = req;
 
   const daysOfWeekMap = {
     0: 'Sunday',

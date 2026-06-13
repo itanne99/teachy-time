@@ -49,7 +49,7 @@ export default async function handler(req, res) {
           return res.status(200).json({ affectedAlarms: data?.length || 0 });
         }
 
-        const [{ data: sounds, error: soundsError }, { data: profile, error: profileError }, maxSounds] = await Promise.all([
+        const [{ data: sounds, error: soundsError }, { data: profile }, maxSounds] = await Promise.all([
           supabase.from("alarm_sounds").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
           supabase.from("profile").select("default_sound_id").eq("user_id", userId).single(),
           getMaxSounds(supabase),

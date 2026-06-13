@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Container, Table, Button, Form, Modal, Alert, Card, Badge } from "react-bootstrap";
 import { useStore } from "@/services/useStore";
 import { PlusCircle, PencilSquare, Trash2, Calendar3, CheckCircle, CalendarX, ExclamationTriangle } from "react-bootstrap-icons";
