@@ -11,9 +11,9 @@
     "db:stop": "supabase stop",
     "db:pull": "supabase db pull",
     "db:push": "supabase db push",
-    "db:push:local": "supabase db push --db-url \"$LOCAL_DB_URL\"",
+    "db:push:local": "node scripts/db-run.js push",
     "db:diff": "supabase db diff -f",
-    "db:list": "supabase migration list --db-url \"$LOCAL_DB_URL\"",
+    "db:list": "node scripts/db-run.js list",
     "db:reset": "supabase stop --no-backup && supabase start"
   },
   "dependencies": {
