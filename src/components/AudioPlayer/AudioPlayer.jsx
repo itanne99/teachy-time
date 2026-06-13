@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactAudioPlayer from 'react-audio-player';
-import { Container, Button, Navbar } from 'react-bootstrap';
-import { MusicNoteBeamed } from 'react-bootstrap-icons';
+import { Container, Navbar } from 'react-bootstrap';
 import { useStore } from '@/services/useStore';
 
 export const AudioPlayer = () => {
@@ -43,9 +42,7 @@ export const AudioPlayer = () => {
         pointerEvents: 'none'
       }}
     >
-      <Container fluid className="d-flex align-items-center">
-        <div style={{ width: '50px' }} className="d-none d-md-block" />
-
+      <Container fluid className="d-flex align-items-center justify-content-center">
         <div 
           className="flex-grow-1 d-flex justify-content-center px-3"
           style={{ 
@@ -70,25 +67,6 @@ export const AudioPlayer = () => {
             <div className="text-muted small italic">No track selected</div>
           )}
         </div>
-
-        <Button
-          variant="primary"
-          className="rounded-circle shadow-lg"
-          style={{ 
-            width: '50px', 
-            height: '50px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            pointerEvents: 'auto',
-            transition: 'all 0.3s ease',
-            zIndex: 1060
-          }}
-          onClick={() => setIsVisible(!isVisible)}
-          aria-label={isVisible ? "Hide Audio Player" : "Show Audio Player"}
-        >
-          <MusicNoteBeamed size={22} />
-        </Button>
       </Container>
     </Navbar>
   );
