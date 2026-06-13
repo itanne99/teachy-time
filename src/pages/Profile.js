@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Container, Form, Button, Alert, Card, Row, Col, Spinner, Modal, Badge, Toast, ToastContainer } from "react-bootstrap";
 import supabase from "@/supabase/component";
 import { useRouter } from "next/router";
@@ -22,7 +22,6 @@ export default function Profile() {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [user, setUser] = useState(null);
-  const [session, setSession] = useState(null);
   const [profile, setProfile] = useState({
     first_name: "",
     last_name: "",
@@ -52,57 +51,10 @@ export default function Profile() {
   const [playingSoundId, setPlayingSoundId] = useState(null);
   const [warningLeadMinutes, setWarningLeadMinutesLocal] = useState(3);
   const [warningChimeId, setWarningChimeIdLocal] = useState(null);
-  const [warningSaving, setWarningSaving] = useState(false);
   const audioPreviewRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  useEffect(() => {
-    return () => {
-      if (audioPreviewRef.current) {
-        audioPreviewRef.current.pause();
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    const fetchSessionAndUser = async () => {
-      const { user, session } = await getUserProfileAndSession();
-      return { user, session };
-    };
-    fetchSessionAndUser().then(({ user, session }) => {
-      setUser(user);
-      setSession(session);
-      if (user) {
-        fetchUserProfile(user.id);
-        setProfile((prev) => ({ ...prev, email: user.email }));
-      } else {
-        setLoading(false);
-      }
-    });
-  }, []);
-
-  useEffect(() => {
-    if (router.isReady) {
-      const { reset } = router.query;
-      if (reset != undefined && (reset === 'true' || reset === 'True')) {
-        setPasswordResetFlag(true);
-      }
-    }
-  }, [router.isReady, router.query.reset, router, setPasswordResetFlag]);
-
-  useEffect(() => {
-    if (router.isReady && !passwordResetFlag && router.query.reset) {
-      router.replace(router.pathname, undefined, { shallow: true });
-    }
-  }, [passwordResetFlag, router.isReady, router.query.reset, router]);
-
-  useEffect(() => {
-    if (user) {
-      fetchSounds();
-    }
-  }, [user]);
-
-  const fetchSounds = async () => {
+  const fetchSounds = useCallback(async () => {
     setSoundLoading(true);
     setSoundError(null);
     try {
@@ -135,9 +87,9 @@ export default function Profile() {
     } finally {
       setSoundLoading(false);
     }
-  };
+  }, [setUserSounds, setDefaultSound, setWarningLeadMinutes, setWarningChimeId]);
 
-  const fetchUserProfile = async (userId) => {
+  const fetchUserProfile = useCallback(async (userId) => {
     setLoading(true);
     setError(null);
     try {
@@ -147,7 +99,6 @@ export default function Profile() {
         throw new Error(data.error || "Failed to fetch profile");
       }
       const newProfile = {
-        ...profile,
         first_name: data.first_name || "",
         last_name: data.last_name || "",
         email: data.email || "",
@@ -160,7 +111,53 @@ export default function Profile() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (audioPreviewRef.current) {
+        audioPreviewRef.current.pause();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const fetchSessionAndUser = async () => {
+      const { user, session } = await getUserProfileAndSession();
+      return { user, session };
+    };
+    fetchSessionAndUser().then(({ user }) => {
+      setUser(user);
+      if (user) {
+        fetchUserProfile(user.id);
+        setProfile((prev) => ({ ...prev, email: user.email }));
+      } else {
+        setLoading(false);
+      }
+    });
+  }, [fetchUserProfile]);
+
+  useEffect(() => {
+    if (router.isReady) {
+      const { reset } = router.query;
+      if (reset != undefined && (reset === 'true' || reset === 'True')) {
+        setPasswordResetFlag(true);
+      }
+    }
+  }, [router.isReady, router.query.reset, router, setPasswordResetFlag]);
+
+  useEffect(() => {
+    if (router.isReady && !passwordResetFlag && router.query.reset) {
+      router.replace(router.pathname, undefined, { shallow: true });
+    }
+  }, [passwordResetFlag, router.isReady, router.query.reset, router]);
+
+  useEffect(() => {
+    if (user) {
+      fetchSounds();
+    }
+  }, [user, fetchSounds]);
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -326,6 +323,7 @@ export default function Profile() {
       setPendingSoundDelete(sound);
       setShowDeleteSoundModal(true);
     } catch (err) {
+      console.error("Failed to check sound usage:", err);
       showToast("Failed to check sound usage", "danger");
     }
   };
@@ -357,26 +355,25 @@ export default function Profile() {
     }
   };
 
-  const handleSaveWarningSettings = async () => {
-    setWarningSaving(true);
+  const updateWarningSettings = async (newMinutes, newChimeId) => {
     try {
       const response = await fetch("/api/userProfile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           user_id: user.id,
-          warning_lead_minutes: warningLeadMinutes,
-          warning_chime_id: warningChimeId,
+          warning_lead_minutes: newMinutes,
+          warning_chime_id: newChimeId,
         }),
       });
       if (!response.ok) throw new Error("Failed to update warning settings");
-      setWarningLeadMinutes(warningLeadMinutes);
-      setWarningChimeId(warningChimeId);
+      setWarningLeadMinutesLocal(newMinutes);
+      setWarningChimeIdLocal(newChimeId);
+      setWarningLeadMinutes(newMinutes);
+      setWarningChimeId(newChimeId);
       showToast("Warning settings updated!");
     } catch (err) {
       showToast(err.message, "danger");
-    } finally {
-      setWarningSaving(false);
     }
   };
 
@@ -430,9 +427,11 @@ export default function Profile() {
               ) : (
                 <span className="form-control-plaintext fw-semibold">{profile.email}</span>
               )}
-              <Form.Text className="text-muted">
-                Your email cannot be changed here.
-              </Form.Text>
+              {isEditing && (
+                <Form.Text className="text-muted">
+                  Your email cannot be changed here.
+                </Form.Text>
+              )}
             </Form.Group>
 
             <Row className="g-3">
@@ -530,7 +529,7 @@ export default function Profile() {
             </div>
           )}
           {userSounds.length === 0 && !soundLoading && (
-            <p className="text-muted text-center py-3 mb-0">No sounds uploaded yet. Click "Upload" to add your first sound.</p>
+            <p className="text-muted text-center py-3 mb-0">No sounds uploaded yet. Click &quot;Upload&quot; to add your first sound.</p>
           )}
           <Row className="g-3">
             {userSounds.map((sound) => (
@@ -589,28 +588,14 @@ export default function Profile() {
 
       <Card className="border-0 shadow-sm mt-4">
         <Card.Header className="bg-white border-0 py-3">
-          <div className="d-flex align-items-center justify-content-between">
-            <div className="d-flex align-items-center gap-3">
-              <span className="d-inline-flex align-items-center justify-content-center bg-warning bg-opacity-10 rounded-circle" style={{ width: "48px", height: "48px" }}>
-                <Bell size={28} className="text-warning" />
-              </span>
-              <div>
-                <h5 className="fw-bold mb-0">Warning Chime Settings</h5>
-                <p className="text-muted small mb-0">Configure the cleanup warning before timers end</p>
-              </div>
+          <div className="d-flex align-items-center gap-3">
+            <span className="d-inline-flex align-items-center justify-content-center bg-warning bg-opacity-10 rounded-circle" style={{ width: "48px", height: "48px" }}>
+              <Bell size={28} className="text-warning" />
+            </span>
+            <div>
+              <h5 className="fw-bold mb-0">Warning Chime Settings</h5>
+              <p className="text-muted small mb-0">Configure the cleanup warning before timers end</p>
             </div>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={handleSaveWarningSettings}
-              disabled={warningSaving}
-            >
-              {warningSaving ? (
-                <><Spinner animation="border" size="sm" className="me-1" /> Saving...</>
-              ) : (
-                <><CheckCircle className="me-1" size={14} /> Save</>
-              )}
-            </Button>
           </div>
         </Card.Header>
         <Card.Body>
@@ -623,7 +608,10 @@ export default function Profile() {
                 </Form.Label>
                 <Form.Select
                   value={warningLeadMinutes}
-                  onChange={(e) => setWarningLeadMinutesLocal(parseInt(e.target.value, 10))}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    updateWarningSettings(val, warningChimeId);
+                  }}
                 >
                   <option value={1}>1 minute</option>
                   <option value={2}>2 minutes</option>
@@ -641,7 +629,10 @@ export default function Profile() {
                 </Form.Label>
                 <Form.Select
                   value={warningChimeId || "__default__"}
-                  onChange={(e) => setWarningChimeIdLocal(e.target.value === "__default__" ? null : e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value === "__default__" ? null : e.target.value;
+                    updateWarningSettings(warningLeadMinutes, val);
+                  }}
                 >
                   <option value="__default__">Default warning chime</option>
                   {PRESET_CHIMES.map(c => (
