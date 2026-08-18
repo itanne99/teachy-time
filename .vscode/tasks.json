@@ -2,10 +2,10 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "docker: supabase up",
+      "label": "supabase: start",
       "type": "shell",
-      "command": "docker compose",
-      "args": ["up", "-d"],
+      "command": "npx",
+      "args": ["supabase", "start"],
       "problemMatcher": [],
       "presentation": {
         "reveal": "silent",
@@ -13,10 +13,10 @@
       }
     },
     {
-      "label": "docker: supabase down",
+      "label": "supabase: stop",
       "type": "shell",
-      "command": "docker compose",
-      "args": ["down"],
+      "command": "npx",
+      "args": ["supabase", "stop"],
       "problemMatcher": [],
       "presentation": {
         "reveal": "silent",
