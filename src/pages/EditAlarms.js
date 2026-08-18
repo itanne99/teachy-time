@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react"
 import { Container, Row, Col, Button, Table, Card, Badge, Modal, Form } from "react-bootstrap"
-import { useReactTable, getCoreRowModel, getSortedRowModel } from "@tanstack/react-table"
+import { useTable, createCoreRowModel, createSortedRowModel, rowSortingFeature, sortFn_datetime } from "@tanstack/react-table"
 import CommonUtils from "@/services/CommonUtils"
 import { AlterAlarm } from "@/components/models/AlterAlarm"
 import { ConfirmModal } from "@/components/models/ConfirmModal"
@@ -340,11 +340,17 @@ export default function EditAlarms({ useStore }) {
     [alarms, activeDay, setAlarms, userSounds, warningLeadMinutes]
   );
 
-  const table = useReactTable({
+  const table = useTable({
+    _features: [rowSortingFeature],
     data: alarms[activeDay] || [],
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
+    _rowModels: {
+      core: createCoreRowModel(),
+      sorted: createSortedRowModel(),
+    },
+    sortFns: {
+      datetime: sortFn_datetime,
+    },
     onSortingChange: setSorting,
     state: {
       sorting,
