@@ -7,7 +7,7 @@ const protectedRoutes = ['/Profile', '/Schedules', '/EditAlarms', '/ViewAlarms']
 // Routes that should redirect to dashboard if already authenticated
 const authRoutes = ['/Login']
 
-export async function middleware(request) {
+export async function proxy(request) {
   const { pathname } = request.nextUrl
 
   // Create Supabase client to check session from cookies
