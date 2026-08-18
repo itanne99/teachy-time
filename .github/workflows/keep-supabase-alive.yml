@@ -1,0 +1,17 @@
+name: Keep Supabase Alive
+on:
+  schedule:
+    # Runs every Monday and Thursday at 12:00 UTC
+    - cron: '0 12 * * 1,4'
+  workflow_dispatch: # Allows manual triggering for testing
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase Edge Function
+        run: |
+          curl -i --location --request POST "${{ secrets.SUPABASE_URL }}/functions/v1/keep-alive" \
+            --header "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            --header "x-keep-alive-secret: ${{ secrets.KEEP_ALIVE_SECRET }}" \
+            --header "Content-Type: application/json"
