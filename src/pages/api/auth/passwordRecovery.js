@@ -27,7 +27,7 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: "Missing required field: email." });
         }
 
-        const { data, error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: getURL() + 'Profile?reset=true' });
+        const { data, error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: getURL() + 'reset-password' });
 
         if (error) {
           throw error;

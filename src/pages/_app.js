@@ -84,6 +84,8 @@ export default function App({ Component, pageProps }) {
             maxScheduleNameLength: data.max_schedule_name_length,
             defaultChimeUrl: data.default_chime_url,
             defaultWarningChimeUrl: data.default_warning_chime_url,
+            Account_Creation: data.Account_Creation,
+            blocked_magic_link_domains: data.blocked_magic_link_domains,
           });
         }
       } catch (error) {
