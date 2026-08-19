@@ -174,16 +174,22 @@ export const SignupFormComponent = ({
         <div className="d-inline-flex align-items-center justify-content-center bg-warning bg-opacity-10 text-warning rounded-circle mb-3" style={{ width: '56px', height: '56px', fontSize: '1.75rem' }}>
           <PersonExclamation />
         </div>
-        <h5 className="fw-bold text-dark mb-2">Account Creation is Currently Disabled</h5>
-        <p className="text-muted small mb-3">
+        <h5 className={`fw-bold mb-2 ${isDarkTheme ? 'text-white' : 'text-dark'}`}>
+          Account Creation is Currently Disabled
+        </h5>
+        <p className={`small mb-3 ${isDarkTheme ? 'text-white-50' : 'text-muted'}`}>
           We are temporarily pausing new user registrations while we complete scheduled system updates.
         </p>
-        <div className="alert bg-warning bg-opacity-10 border-warning border-opacity-25 text-start p-3 mb-4 text-dark text-start">
+        <div className={`alert bg-warning bg-opacity-10 border border-warning border-opacity-25 text-start p-3 mb-4 ${isDarkTheme ? 'text-light' : 'text-dark'}`}>
           <div className="d-flex gap-2">
             <ExclamationTriangleFill className="fs-5 text-warning flex-shrink-0" />
             <div>
-              <strong className="d-block small mb-1">Existing Users & Invited Teachers</strong>
-              <span className="small opacity-75">If you already have an account or received an invitation link, you can log in.</span>
+              <strong className={`d-block small mb-1 ${isDarkTheme ? 'text-warning' : 'text-dark'}`}>
+                Existing Users & Invited Teachers
+              </strong>
+              <span className={`small ${isDarkTheme ? 'text-light text-opacity-75' : 'opacity-75'}`}>
+                If you already have an account or received an invitation link, you can log in.
+              </span>
             </div>
           </div>
         </div>

@@ -179,7 +179,7 @@ export const LoginForm = ({ show, onHide }) => {
       <Modal.Body className="pt-2">
         <div className="text-center mb-3">
           <h6 className="fw-bold mb-1">{view === 'login' ? 'Welcome back to Teachy Time' : 'Create Your Account'}</h6>
-          <p className="text-muted small mb-0">{view === 'login' ? 'Select your preferred sign-in method' : 'Join Teachy Time to organize your schedule'}</p>
+          <p className="text-white-50 small mb-0">{view === 'login' ? 'Select your preferred sign-in method' : 'Join Teachy Time to organize your schedule'}</p>
         </div>
         {view === 'signup' ? (
           <SignupFormComponent
