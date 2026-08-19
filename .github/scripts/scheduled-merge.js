@@ -204,7 +204,7 @@ export async function runScheduledMerge() {
   const githubToken = process.env.GITHUB_TOKEN
   const repoSlug = process.env.GITHUB_REPOSITORY
   const allowedBranches = (process.env.ALLOWED_BRANCHES || 'main,master').split(',').map((b) => b.trim())
-  const mergeMethod = process.env.MERGE_METHOD || 'squash'
+  const mergeMethod = process.env.MERGE_METHOD || 'merge'
   const isDryRun = process.env.DRY_RUN === 'true'
 
   if (!githubToken) {
