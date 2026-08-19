@@ -189,9 +189,7 @@ Together, we can make Teachy Time **better**!
 
 ## Contributing
 
-First off, thanks for taking the time to contribute! Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make will benefit everybody else and are **greatly appreciated**.
-
-Please read [our contribution guidelines](docs/CONTRIBUTING.md), and thank you for being involved!
+First off, thanks for taking the time to contribute! Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make will benefit everybody else and are **greatly appreciated**. Feel free to open an issue or submit a pull request!
 
 ## Authors & contributors
 
@@ -204,7 +202,7 @@ For a full list of all authors and contributors, see [the contributors page](htt
 Teachy Time follows good practices of security, but 100% security cannot be assured.
 Teachy Time is provided **"as is"** without any **warranty**. Use at your own risk.
 
-_For more information and to report security issues, please refer to our [security documentation](docs/SECURITY.md)._
+_To report security issues, please open a private security advisory or contact the maintainer directly._
 
 ## License
 
