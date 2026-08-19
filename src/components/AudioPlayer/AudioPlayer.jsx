@@ -26,8 +26,9 @@ export const AudioPlayer = () => {
     }
   }, [isPlaying]);
 
-  const handlePlay = () => setIsPlaying(true);
-  const handlePause = () => setIsPlaying(false);
+  const handlePlay = () => setIsPlaying(true)
+  const handlePause = () => setIsPlaying(false)
+  const handleEnded = () => setIsPlaying(false)
 
   return (
     <Navbar
@@ -62,6 +63,7 @@ export const AudioPlayer = () => {
               ref={audioRef}
               onPlay={handlePlay}
               onPause={handlePause}
+              onEnded={handleEnded}
             />
           ) : (
             <div className="text-muted small italic">No track selected</div>
@@ -69,5 +71,5 @@ export const AudioPlayer = () => {
         </div>
       </Container>
     </Navbar>
-  );
+  )
 };
