@@ -160,6 +160,29 @@ yarn db:stop
 yarn db:reset
 ```
 
+### Running Tests
+
+We maintain a strict separation of concerns for tests:
+- **Logic & API Routes (Vitest):** Pure Node in-memory tests for business logic, store, and API endpoints using mocked Supabase clients.
+- **UI & Userflows (Playwright):** End-to-end browser tests for user flows with automated Supabase lifecycle management.
+
+```bash
+# Run logic and API tests
+yarn test
+
+# Run tests in watch mode
+yarn test:watch
+
+# Generate coverage report
+yarn test:coverage
+
+# Run Playwright E2E browser tests
+yarn test:e2e
+
+# Run Playwright in interactive UI mode
+yarn test:e2e:ui
+```
+
 ## Usage
 
 > Teachy Time helps teachers manage their daily schedule by providing a visual countdown for active time segments and a list of upcoming alarms. Users can create, edit, and delete alarms, and copy schedules between different days of the week.

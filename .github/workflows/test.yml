@@ -1,0 +1,33 @@
+name: Test Suite & Quality Gates
+
+on:
+  push:
+    branches: [master, dev]
+  pull_request:
+    branches: [master, dev]
+
+jobs:
+  test:
+    name: Lint, Unit & API Tests, Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Run ESLint
+        run: yarn run lint
+
+      - name: Run Logic & API Tests (Vitest)
+        run: yarn run test
+
+      - name: Build Next.js Production App
+        run: yarn run build
