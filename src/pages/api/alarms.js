@@ -1,6 +1,8 @@
 import createClient from '@/supabase/api'
 import { DAYS_OF_WEEK } from '@/config/constants'
 import { getAppConfig } from '@/services/configService'
+import { applyRateLimit } from '@/services/rateLimitService'
+import { sanitizeString, validateTime, validateDayOfWeek, validatePositiveInt } from '@/services/validationService'
 
 async function getAuthUserId(req, res) {
   const supabase = createClient(req, res)
@@ -12,6 +14,8 @@ async function getAuthUserId(req, res) {
 }
 
 export default async function handler(req, res) {
+  if (!applyRateLimit(req, res, { limit: 100, windowMs: 60_000 })) return;
+
   const { method, body } = req
 
   const supabase = createClient(req, res);
@@ -72,8 +76,8 @@ export default async function handler(req, res) {
       try {
         const { schedule_id } = body;
 
-        if (!schedule_id) {
-          res.status(400).json({ error: 'Schedule ID is required.' });
+        if (!validatePositiveInt(schedule_id)) {
+          res.status(400).json({ error: 'Schedule ID is required and must be a valid positive integer.' });
           return;
         }
 
@@ -125,7 +129,27 @@ export default async function handler(req, res) {
           return
         }
 
+        if (!validateDayOfWeek(day_of_week)) {
+          res.status(400).json({ error: 'Invalid day of week.' })
+          return
+        }
+
+        if (!validateTime(start_time) || !validateTime(end_time)) {
+          res.status(400).json({ error: 'Invalid time format. Expected HH:MM or HH:MM:SS.' })
+          return
+        }
+
+        if (!validatePositiveInt(schedule_id)) {
+          res.status(400).json({ error: 'Schedule ID must be a valid positive integer.' })
+          return
+        }
+
         const config = await getAppConfig(supabase)
+        const sanitizedLabel = sanitizeString(label, config.max_label_length)
+        if (!sanitizedLabel) {
+          res.status(400).json({ error: 'Label is required and cannot be empty.' })
+          return
+        }
         if (label.length > config.max_label_length) {
           res.status(400).json({ error: `Label cannot exceed ${config.max_label_length} characters.` })
           return
@@ -154,7 +178,7 @@ export default async function handler(req, res) {
             day_of_week: day_of_week,
             start_time: start_time,
             end_time: end_time,
-            label: label,
+            label: sanitizedLabel,
             play_sound: play_sound || false,
             sound_id: sound_id || null,
             play_warning_sound: play_warning_sound || false,
@@ -177,13 +201,29 @@ export default async function handler(req, res) {
     case 'PATCH':
       try {
         const { id, start_time, end_time, label, play_sound, sound_id, play_warning_sound, warning_sound_id } = body
-        if (!id) {
-          res.status(400).json({ error: 'Timer ID is required.' })
+        if (!validatePositiveInt(id)) {
+          res.status(400).json({ error: 'Timer ID is required and must be a valid positive integer.' })
           return
         }
 
-        if (label) {
-          const config = await getAppConfig(supabase)
+        if (start_time && !validateTime(start_time)) {
+          res.status(400).json({ error: 'Invalid start time format.' })
+          return
+        }
+
+        if (end_time && !validateTime(end_time)) {
+          res.status(400).json({ error: 'Invalid end time format.' })
+          return
+        }
+
+        const config = await getAppConfig(supabase)
+        let sanitizedLabel
+        if (label !== undefined) {
+          sanitizedLabel = sanitizeString(label, config.max_label_length)
+          if (!sanitizedLabel) {
+            res.status(400).json({ error: 'Label cannot be empty.' })
+            return
+          }
           if (label.length > config.max_label_length) {
             res.status(400).json({ error: `Label cannot exceed ${config.max_label_length} characters.` })
             return
@@ -206,7 +246,7 @@ export default async function handler(req, res) {
           res.status(403).json({ error: 'Forbidden: You do not own this timer.' });
           return;
         }
-        if (!start_time && !end_time && !label && play_sound === undefined && sound_id === undefined && play_warning_sound === undefined && warning_sound_id === undefined) {
+        if (!start_time && !end_time && sanitizedLabel === undefined && play_sound === undefined && sound_id === undefined && play_warning_sound === undefined && warning_sound_id === undefined) {
           res.status(400).json({ error: 'No update data provided for start_time, end_time, label, play_sound, sound_id, play_warning_sound, or warning_sound_id.' });
           return;
         }
@@ -214,7 +254,7 @@ export default async function handler(req, res) {
         const updatePayload = {};
         if (start_time) updatePayload.start_time = start_time;
         if (end_time) updatePayload.end_time = end_time;
-        if (label) updatePayload.label = label;
+        if (sanitizedLabel !== undefined) updatePayload.label = sanitizedLabel;
         if (play_sound !== undefined) updatePayload.play_sound = play_sound;
         if (sound_id !== undefined) updatePayload.sound_id = sound_id;
         if (play_warning_sound !== undefined) updatePayload.play_warning_sound = play_warning_sound;
@@ -276,7 +316,12 @@ export default async function handler(req, res) {
       try {
         const { id, day_of_week } = body;
         
-        if (id) {
+        if (id !== undefined) {
+          if (!validatePositiveInt(id)) {
+            res.status(400).json({ error: 'Timer ID must be a valid positive integer.' });
+            return;
+          }
+
           const { data: alarmToDelete, error: alarmToDeleteError } = await checkExistingAlarm({ id });
 
           if (alarmToDeleteError) {
@@ -310,6 +355,11 @@ export default async function handler(req, res) {
         
         if (day_of_week !== undefined) {
           const { schedule_id } = body;
+          if (!validateDayOfWeek(day_of_week) || !validatePositiveInt(schedule_id)) {
+            res.status(400).json({ error: 'Valid day_of_week and positive integer schedule_id are required.' });
+            return;
+          }
+
           const { error } = await supabase
             .from('alarms')
             .delete()

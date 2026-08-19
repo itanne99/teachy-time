@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import handler from '@/pages/api/schedules'
 import { createApiRequest } from '../helpers/mockRequest'
 import createClient from '@/supabase/api'
+import { resetRateLimits } from '@/services/rateLimitService'
 
 vi.mock('@/supabase/api')
 
@@ -10,6 +11,7 @@ describe('API Route: /api/schedules', () => {
 
   beforeEach(() => {
     vi.restoreAllMocks()
+    resetRateLimits()
   })
 
   it('returns 401 when unauthenticated', async () => {
@@ -53,7 +55,7 @@ describe('API Route: /api/schedules', () => {
     expect(res._getJSONData()).toEqual(mockSchedules)
   })
 
-  it('returns 400 on PUT when schedule name is missing', async () => {
+  it('returns 400 on PUT when schedule name is missing or empty', async () => {
     mockSupabase = {
       auth: {
         getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'u-123' } }, error: null }),
@@ -65,7 +67,7 @@ describe('API Route: /api/schedules', () => {
     await handler(req, res)
 
     expect(res._getStatusCode()).toBe(400)
-    expect(res._getJSONData()).toEqual({ error: 'Name is required.' })
+    expect(res._getJSONData().error).toMatch(/Name is required/i)
   })
 
   it('creates new schedule on PUT with valid name', async () => {

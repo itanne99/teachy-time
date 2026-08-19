@@ -6,19 +6,21 @@ import supabase from '@/supabase/component';
 import ProfileDropdown from './ProfileDropdown';
 import { LoginForm } from './LoginForm';
 import { PersonCircle, Calendar3, CheckLg } from 'react-bootstrap-icons';
+import { useAuthStore } from '@/services/stores/useAuthStore';
+import { useScheduleStore } from '@/services/stores/useScheduleStore';
 
-export const NavBar = ({ useStore }) => {
+export const NavBar = () => {
   const router = useRouter();
   const currentPath = router.asPath;
-  const session = useStore((state) => state.session);
-  const schedules = useStore((state) => state.schedules);
-  const currentScheduleId = useStore((state) => state.currentScheduleId);
-  const setCurrentScheduleId = useStore((state) => state.setCurrentScheduleId);
-  const forceLoginOpen = useStore((state) => state.forceLoginOpen);
-  const setForceLoginOpen = useStore((state) => state.setForceLoginOpen);
-  const authModalOpen = useStore((state) => state.authModalOpen);
-  const setAuthModalOpen = useStore((state) => state.setAuthModalOpen);
-  const setAuthModalView = useStore((state) => state.setAuthModalView);
+  const session = useAuthStore((state) => state.session);
+  const schedules = useScheduleStore((state) => state.schedules);
+  const currentScheduleId = useScheduleStore((state) => state.currentScheduleId);
+  const setCurrentScheduleId = useScheduleStore((state) => state.setCurrentScheduleId);
+  const forceLoginOpen = useAuthStore((state) => state.forceLoginOpen);
+  const setForceLoginOpen = useAuthStore((state) => state.setForceLoginOpen);
+  const authModalOpen = useAuthStore((state) => state.authModalOpen);
+  const setAuthModalOpen = useAuthStore((state) => state.setAuthModalOpen);
+  const setAuthModalView = useAuthStore((state) => state.setAuthModalView);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   // Sync mobile modal state with global forceLoginOpen state only on mobile viewport (< 992px)
@@ -133,7 +135,7 @@ export const NavBar = ({ useStore }) => {
         </div>
       );
     } else {
-      return <ProfileDropdown useStore={useStore} />;
+      return <ProfileDropdown />;
     }
   };
 
@@ -180,7 +182,7 @@ export const NavBar = ({ useStore }) => {
 
             {/* Desktop dropdown (visible on desktop >= lg) */}
             <div className="d-none d-lg-block">
-              <ProfileDropdown useStore={useStore} />
+              <ProfileDropdown />
             </div>
           </div>
         )}
@@ -193,7 +195,6 @@ export const NavBar = ({ useStore }) => {
           setAuthModalOpen(false);
           setForceLoginOpen(false);
         }} 
-        useStore={useStore} 
       />
     </Navbar>
   )

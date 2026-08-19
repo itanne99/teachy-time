@@ -1,8 +1,9 @@
 import createClient from "@/supabase/api";
 import supabaseService from "@/supabase/supabaseService";
 import { getAppConfig } from "@/services/configService";
+import { applyRateLimit } from "@/services/rateLimitService";
+import { sanitizeString, validatePositiveInt } from "@/services/validationService";
 
-const ALLOWED_TYPES = ["audio/mpeg", "audio/wav", "audio/ogg", "audio/x-wav", "audio/mp3"];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 async function getAuthUserId(req, res) {
@@ -15,6 +16,8 @@ async function getAuthUserId(req, res) {
 }
 
 export default async function handler(req, res) {
+  if (!applyRateLimit(req, res, { limit: 100, windowMs: 60_000 })) return;
+
   const { method, query, body } = req;
   const supabase = createClient(req, res);
 
@@ -29,6 +32,9 @@ export default async function handler(req, res) {
         const { affectedCount, id } = query;
 
         if (affectedCount === "true" && id) {
+          if (!validatePositiveInt(id)) {
+            return res.status(400).json({ error: "Invalid sound ID" });
+          }
           const { data, error } = await supabase
             .from("alarms")
             .select("id", { count: "exact", head: true })
@@ -63,6 +69,11 @@ export default async function handler(req, res) {
 
         if (!name || !fileData || !fileType) {
           return res.status(400).json({ error: "Missing required fields: name, fileData, fileType" });
+        }
+
+        const sanitizedName = sanitizeString(name, 100);
+        if (!sanitizedName) {
+          return res.status(400).json({ error: "Sound name is required and cannot be empty" });
         }
 
         let ext = fileType.split('/', 2)[1]?.replace('x-', '') || 'mp3';
@@ -105,7 +116,7 @@ export default async function handler(req, res) {
 
         const { data: sound, error: insertError } = await supabase
           .from("alarm_sounds")
-          .insert([{ user_id: userId, name, file_path: filePath, storage_url: publicUrl }])
+          .insert([{ user_id: userId, name: sanitizedName, file_path: filePath, storage_url: publicUrl }])
           .select()
           .single();
 
@@ -120,8 +131,8 @@ export default async function handler(req, res) {
     case "DELETE":
       try {
         const { id } = body;
-        if (!id) {
-          return res.status(400).json({ error: "Sound ID is required" });
+        if (!id || !validatePositiveInt(id)) {
+          return res.status(400).json({ error: "Sound ID is required and must be a valid positive integer" });
         }
 
         const { data: sound, error: fetchError } = await supabase

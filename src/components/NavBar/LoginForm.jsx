@@ -4,22 +4,25 @@ import { Modal, Form, Button, Alert, Nav, Tab, InputGroup } from 'react-bootstra
 import { LoginHandler } from '@/services/LoginHandler';
 import { PersonCircle, Envelope, Lock, Magic, Eye, EyeSlash, ArrowRightShort, SendFill } from 'react-bootstrap-icons';
 import { SignupFormComponent } from './SignupFormComponent';
+import { useAuthStore } from '@/services/stores/useAuthStore';
+import { useAlarmStore } from '@/services/stores/useAlarmStore';
+import { useConfigStore } from '@/services/stores/useConfigStore';
 
-export const LoginForm = ({ show, onHide, useStore }) => {
+export const LoginForm = ({ show, onHide }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-  const authModalView = useStore((state) => state.authModalView);
-  const setAuthModalView = useStore((state) => state.setAuthModalView);
+  const authModalView = useAuthStore((state) => state.authModalView);
+  const setAuthModalView = useAuthStore((state) => state.setAuthModalView);
   const [view, setView] = useState(authModalView || 'login'); // 'login' or 'signup'
-  const setAlarms = useStore((state) => state.setAlarms);
-  const session = useStore((state) => state.session);
-  const accountCreationEnabled = useStore((state) => state.Account_Creation);
-  const blockedMagicLinkDomains = useStore((state) => state.blocked_magic_link_domains) || [];
-  const authSuccessMessage = useStore((state) => state.authSuccessMessage);
+  const setAlarms = useAlarmStore((state) => state.setAlarms);
+  const session = useAuthStore((state) => state.session);
+  const accountCreationEnabled = useConfigStore((state) => state.Account_Creation);
+  const blockedMagicLinkDomains = useConfigStore((state) => state.blocked_magic_link_domains) || [];
+  const authSuccessMessage = useAuthStore((state) => state.authSuccessMessage);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
 

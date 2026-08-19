@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, Alert, Spinner } from 'react-bootstrap';
-import { useStore } from "@/services/useStore";
+import { useAuthStore } from "@/services/stores/useAuthStore";
 import { Key, CheckCircle, XCircle, ShieldLock } from 'react-bootstrap-icons';
 
 export const UpdatePasswordModal = () => {
-  const passwordResetFlag = useStore((state) => state.passwordResetFlag);
-  const setPasswordResetFlag = useStore((state) => state.setPasswordResetFlag);
+  const passwordResetFlag = useAuthStore((state) => state.passwordResetFlag);
+  const setPasswordResetFlag = useAuthStore((state) => state.setPasswordResetFlag);
 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');

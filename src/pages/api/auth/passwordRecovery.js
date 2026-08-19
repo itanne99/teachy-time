@@ -1,6 +1,10 @@
 import createClient from "@/supabase/api";
+import { applyRateLimit } from "@/services/rateLimitService";
+import { validateEmail } from "@/services/validationService";
 
 export default async function handler(req, res) {
+  if (!applyRateLimit(req, res, { limit: 10, windowMs: 60_000 })) return;
+
   const { method, body } = req;
 
   const supabase = createClient(req, res);
@@ -27,7 +31,11 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: "Missing required field: email." });
         }
 
-        const { data, error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: getURL() + 'reset-password' });
+        if (!validateEmail(email)) {
+          return res.status(400).json({ error: "Invalid email format." });
+        }
+
+        const { data, error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), { redirectTo: getURL() + 'reset-password' });
 
         if (error) {
           throw error;
@@ -49,12 +57,13 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: "Missing required field: password." });
         }
 
-        // This endpoint assumes the user has already clicked the reset link
-        // and their session has been set on the client-side using the token from the URL.
-        // Therefore, the user is already authenticated when this request is made.
-               const { error } = await supabase.auth.updateUser({
+        if (typeof password !== 'string' || password.length < 6) {
+          return res.status(400).json({ error: "Password must be at least 6 characters long." });
+        }
+
+        const { error } = await supabase.auth.updateUser({
           password: password,
-          captchaToken: code || undefined, // Optional, if you want to verify captcha
+          captchaToken: code || undefined,
         });
 
         if (error) {

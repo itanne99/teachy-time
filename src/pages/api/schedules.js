@@ -1,5 +1,7 @@
 import createClient from "@/supabase/api"
 import { getAppConfig } from "@/services/configService"
+import { applyRateLimit } from "@/services/rateLimitService"
+import { sanitizeString, validatePositiveInt } from "@/services/validationService"
 
 async function getAuthUserId(req, res) {
   const supabase = createClient(req, res);
@@ -11,6 +13,8 @@ async function getAuthUserId(req, res) {
 }
 
 export default async function handler(req, res) {
+  if (!applyRateLimit(req, res, { limit: 100, windowMs: 60_000 })) return;
+
   const { method, body } = req;
   const supabase = createClient(req, res);
 
@@ -42,13 +46,17 @@ export default async function handler(req, res) {
         if (!name) return res.status(400).json({ error: 'Name is required.' })
 
         const config = await getAppConfig(supabase)
+        const sanitizedName = sanitizeString(name, config.max_schedule_name_length)
+        if (!sanitizedName) {
+          return res.status(400).json({ error: 'Name is required and cannot be empty.' })
+        }
         if (name.length > config.max_schedule_name_length) {
           return res.status(400).json({ error: `Schedule name cannot exceed ${config.max_schedule_name_length} characters.` })
         }
 
         const { data, error } = await supabase
           .from('schedules')
-          .insert([{ user_id: userId, name }])
+          .insert([{ user_id: userId, name: sanitizedName }])
           .select()
           .single();
 
@@ -63,8 +71,13 @@ export default async function handler(req, res) {
       try {
         const { id, name } = body
         if (!id || !name) return res.status(400).json({ error: 'ID and Name are required.' })
+        if (!validatePositiveInt(id)) return res.status(400).json({ error: 'ID must be a valid positive integer.' })
 
         const config = await getAppConfig(supabase)
+        const sanitizedName = sanitizeString(name, config.max_schedule_name_length)
+        if (!sanitizedName) {
+          return res.status(400).json({ error: 'Name is required and cannot be empty.' })
+        }
         if (name.length > config.max_schedule_name_length) {
           return res.status(400).json({ error: `Schedule name cannot exceed ${config.max_schedule_name_length} characters.` })
         }
@@ -90,7 +103,7 @@ export default async function handler(req, res) {
 
         const { data, error } = await supabase
           .from('schedules')
-          .update({ name })
+          .update({ name: sanitizedName })
           .eq('id', id)
           .select()
           .single();
@@ -106,6 +119,7 @@ export default async function handler(req, res) {
       try {
         const { id } = body;
         if (!id) return res.status(400).json({ error: 'ID is required.' });
+        if (!validatePositiveInt(id)) return res.status(400).json({ error: 'ID must be a valid positive integer.' });
 
         const { data: schedule, error: fetchError } = await supabase
           .from('schedules')

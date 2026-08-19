@@ -1,17 +1,18 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { ProgressBar, Badge } from "react-bootstrap";
 import CommonUtils from "@/services/CommonUtils";
-import { useStore } from "@/services/useStore";
+import { useAudioStore } from "@/services/stores/useAudioStore";
 import { Clock, HourglassSplit, CheckCircle } from "react-bootstrap-icons";
 import { resolveSoundUrl, DEFAULT_CHIME_URL, DEFAULT_WARNING_CHIME_URL, findPresetChime, findPresetWarningChime } from "@/config/chimes";
+import { createInitialAlarmTracker, evaluateAlarmAudioTriggers } from "@/services/alarmAudioService";
 
 function UpcomingAlarmBar({ alarms }) {
-  const setIsPlaying = useStore((state) => state.setIsPlaying);
-  const setAudioSrc = useStore((state) => state.setAudioSrc);
-  const defaultSound = useStore((state) => state.defaultSound);
-  const userSounds = useStore((state) => state.userSounds);
-  const warningLeadMinutes = useStore((state) => state.warningLeadMinutes);
-  const warningChimeId = useStore((state) => state.warningChimeId);
+  const setIsPlaying = useAudioStore((state) => state.setIsPlaying);
+  const setAudioSrc = useAudioStore((state) => state.setAudioSrc);
+  const defaultSound = useAudioStore((state) => state.defaultSound);
+  const userSounds = useAudioStore((state) => state.userSounds);
+  const warningLeadMinutes = useAudioStore((state) => state.warningLeadMinutes);
+  const warningChimeId = useAudioStore((state) => state.warningChimeId);
 
   const resolveAudioSrc = useCallback((alarm) => {
     if (!alarm) return DEFAULT_CHIME_URL;
@@ -47,9 +48,8 @@ function UpcomingAlarmBar({ alarms }) {
   const [barVariant, setBarVariant] = useState("secondary");
   const [statusLabel, setStatusLabel] = useState("");
 
-  const lastAlarmIdRef = useRef(null);
+  const activeAlarmTrackerRef = useRef(createInitialAlarmTracker());
   const endAlarmTimeoutRef = useRef(null);
-  const warningTriggeredRef = useRef(new Set());
 
   useEffect(() => {
     const findActiveAndNextSegments = () => {
@@ -63,6 +63,8 @@ function UpcomingAlarmBar({ alarms }) {
 
       let activeSegment = null;
       let nextUpcomingSegment = null;
+      let activeSegmentStartTime = null;
+      let activeSegmentEndTime = null;
 
       for (let i = 0; i < sortedAlarms.length; i++) {
         const alarm = sortedAlarms[i];
@@ -78,6 +80,8 @@ function UpcomingAlarmBar({ alarms }) {
 
         if (now >= segmentStartTime && now < segmentEndTime) {
           activeSegment = alarm;
+          activeSegmentStartTime = segmentStartTime;
+          activeSegmentEndTime = segmentEndTime;
           nextUpcomingSegment = sortedAlarms[i + 1] || null;
           break;
         } else if (now < segmentStartTime) {
@@ -90,40 +94,27 @@ function UpcomingAlarmBar({ alarms }) {
         }
       }
 
-      if (lastAlarmIdRef.current && (!activeSegment || activeSegment.id !== lastAlarmIdRef.current)) {
-        const src = resolveAudioSrc(activeSegment || lastAlarmIdRef.current ? alarms.find(a => a.id === lastAlarmIdRef.current) : null);
-        setAudioSrc(src);
+      const { nextTracker, triggeredAudio } = evaluateAlarmAudioTriggers({
+        alarms,
+        activeSegment,
+        segmentStartTime: activeSegmentStartTime,
+        segmentEndTime: activeSegmentEndTime,
+        tracker: activeAlarmTrackerRef.current,
+        now,
+        warningLeadMinutes,
+        resolveAudioSrc,
+        resolveWarningAudioSrc,
+      });
+
+      activeAlarmTrackerRef.current = nextTracker;
+
+      if (triggeredAudio && triggeredAudio.shouldPlay && triggeredAudio.audioSrc) {
+        setAudioSrc(triggeredAudio.audioSrc);
         setIsPlaying(true);
-      }
-
-      if (activeSegment && activeSegment.play_warning_sound) {
-        const warningKey = activeSegment.id;
-        if (!warningTriggeredRef.current.has(warningKey)) {
-          const [endHour, endMinute] = activeSegment.end_time.split(":").map(Number);
-          let segmentEndTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endHour, endMinute, 0);
-          if (segmentEndTime < new Date(now.getFullYear(), now.getMonth(), now.getDate(), activeSegment.start_time.split(":").map(Number)[0], activeSegment.start_time.split(":").map(Number)[1], 0)) {
-            segmentEndTime.setDate(segmentEndTime.getDate() + 1);
-          }
-          const warningThresholdMs = warningLeadMinutes * 60 * 1000;
-          const timeUntilEnd = segmentEndTime.getTime() - now.getTime();
-          if (timeUntilEnd > 0 && timeUntilEnd <= warningThresholdMs) {
-            warningTriggeredRef.current.add(warningKey);
-            const warningSrc = resolveWarningAudioSrc(activeSegment);
-            if (warningSrc) {
-              setAudioSrc(warningSrc);
-              setIsPlaying(true);
-            }
-          }
-        }
-      }
-
-      if (!activeSegment) {
-        warningTriggeredRef.current.clear();
       }
 
       setCurrentAlarm(activeSegment);
       setNextAlarm(nextUpcomingSegment);
-      lastAlarmIdRef.current = activeSegment ? activeSegment.id : null;
 
       if (activeSegment) {
         setCurrentAlarmLabel(activeSegment.label);

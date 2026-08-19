@@ -5,12 +5,14 @@ import UpcomingAlarmBar from "@/components/UpcomingAlarm/UpcomingAlarmBar";
 import UpcomingAlarmList from "@/components/UpcomingAlarm/UpcomingAlarmList";
 import CommonUtils from "@/services/CommonUtils";
 import Link from "next/link";
+import { useAuthStore } from "@/services/stores/useAuthStore";
+import { useAlarmStore } from "@/services/stores/useAlarmStore";
 
-export default function App({ useStore }) {
-  const user = useStore((state) => state.user);
-  const alarms = useStore((state) => state.alarms);
-  const setAuthModalOpen = useStore((state) => state.setAuthModalOpen);
-  const setAuthModalView = useStore((state) => state.setAuthModalView);
+export default function App() {
+  const user = useAuthStore((state) => state.user);
+  const alarms = useAlarmStore((state) => state.alarms);
+  const setAuthModalOpen = useAuthStore((state) => state.setAuthModalOpen);
+  const setAuthModalView = useAuthStore((state) => state.setAuthModalView);
   const currentDay = CommonUtils.getCurrentDay();
   const todayAlarms = alarms[currentDay] || [];
 

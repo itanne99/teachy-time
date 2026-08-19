@@ -1,16 +1,18 @@
 import { useState } from "react"
 import { Container, Table, Button, Form, Modal, Alert, Card, Badge } from "react-bootstrap"
-import { useStore } from "@/services/useStore"
+import { useAuthStore } from "@/services/stores/useAuthStore"
+import { useScheduleStore } from "@/services/stores/useScheduleStore"
+import { useConfigStore } from "@/services/stores/useConfigStore"
 import { PlusCircle, PencilSquare, Trash2, Calendar3, CheckCircle, CalendarX, ExclamationTriangle } from "react-bootstrap-icons"
 import { API_ENDPOINTS } from "@/config/constants"
 
 export default function Schedules() {
-  const session = useStore((state) => state.session)
-  const schedules = useStore((state) => state.schedules)
-  const setSchedules = useStore((state) => state.setSchedules)
-  const currentScheduleId = useStore((state) => state.currentScheduleId)
-  const setCurrentScheduleId = useStore((state) => state.setCurrentScheduleId)
-  const maxScheduleNameLength = useStore((state) => state.maxScheduleNameLength)
+  const session = useAuthStore((state) => state.session)
+  const schedules = useScheduleStore((state) => state.schedules)
+  const setSchedules = useScheduleStore((state) => state.setSchedules)
+  const currentScheduleId = useScheduleStore((state) => state.currentScheduleId)
+  const setCurrentScheduleId = useScheduleStore((state) => state.setCurrentScheduleId)
+  const maxScheduleNameLength = useConfigStore((state) => state.maxScheduleNameLength)
 
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState("add");

@@ -5,26 +5,33 @@ import "@/styles/globals.css"
 import { Container } from "react-bootstrap"
 import { useEffect } from "react"
 import supabase from "@/supabase/component"
-import { useStore } from "@/services/useStore"
+import {
+  useAlarmStore,
+  useScheduleStore,
+  useAuthStore,
+  useAudioStore,
+  useConfigStore,
+} from "@/services/useStore"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Analytics } from "@vercel/analytics/next"
 import { Agentation } from "agentation"
 import { API_ENDPOINTS } from "@/config/constants"
 
 export default function App({ Component, pageProps }) {
-  const setAlarms = useStore((state) => state.setAlarms);
-  const setUser = useStore((state) => state.setUser);
-  const setSession = useStore((state) => state.setSession);
-  const setSchedules = useStore((state) => state.setSchedules);
-  const setUserSounds = useStore((state) => state.setUserSounds);
-  const setDefaultSound = useStore((state) => state.setDefaultSound);
-  const setWarningLeadMinutes = useStore((state) => state.setWarningLeadMinutes);
-  const setWarningChimeId = useStore((state) => state.setWarningChimeId);
-  const currentScheduleId = useStore((state) => state.currentScheduleId);
-  const setCurrentScheduleId = useStore((state) => state.setCurrentScheduleId);
-  const session = useStore((state) => state.session);
-  const setAuthSuccessMessage = useStore((state) => state.setAuthSuccessMessage);
-  const setForceLoginOpen = useStore((state) => state.setForceLoginOpen);
+  const setAlarms = useAlarmStore((state) => state.setAlarms);
+  const setUser = useAuthStore((state) => state.setUser);
+  const setSession = useAuthStore((state) => state.setSession);
+  const session = useAuthStore((state) => state.session);
+  const setAuthSuccessMessage = useAuthStore((state) => state.setAuthSuccessMessage);
+  const setForceLoginOpen = useAuthStore((state) => state.setForceLoginOpen);
+  const setSchedules = useScheduleStore((state) => state.setSchedules);
+  const currentScheduleId = useScheduleStore((state) => state.currentScheduleId);
+  const setCurrentScheduleId = useScheduleStore((state) => state.setCurrentScheduleId);
+  const setUserSounds = useAudioStore((state) => state.setUserSounds);
+  const setDefaultSound = useAudioStore((state) => state.setDefaultSound);
+  const setWarningLeadMinutes = useAudioStore((state) => state.setWarningLeadMinutes);
+  const setWarningChimeId = useAudioStore((state) => state.setWarningChimeId);
+  const setAppConfig = useConfigStore((state) => state.setAppConfig);
 
   useEffect(() => {
     // Check for email confirmation hash in URL
@@ -98,7 +105,7 @@ export default function App({ Component, pageProps }) {
         const response = await fetch(API_ENDPOINTS.CONFIG);
         const data = await response.json();
         if (response.ok) {
-          useStore.getState().setAppConfig({
+          setAppConfig({
             maxLabelLength: data.max_label_length,
             maxScheduleNameLength: data.max_schedule_name_length,
             defaultChimeUrl: data.default_chime_url,
@@ -155,7 +162,7 @@ export default function App({ Component, pageProps }) {
     });
 
     return () => subscription.unsubscribe();
-  }, [setAlarms, setSession, setUser, setSchedules, setCurrentScheduleId, currentScheduleId, setUserSounds, setDefaultSound, setWarningLeadMinutes, setWarningChimeId]);
+  }, [setAlarms, setSession, setUser, setSchedules, setCurrentScheduleId, currentScheduleId, setUserSounds, setDefaultSound, setWarningLeadMinutes, setWarningChimeId, setAppConfig]);
 
   // Separate effect to handle alarm fetching when schedule changes
   useEffect(() => {
@@ -182,8 +189,8 @@ export default function App({ Component, pageProps }) {
 
   return(
   <Container fluid className="p-0 bg-light d-flex flex-column" style={{ minHeight: "100vh" }}>
-    <NavBar useStore={useStore} />
-    <Component {...pageProps} useStore={useStore} />
+    <NavBar />
+    <Component {...pageProps} />
     <AudioPlayer />
     <SpeedInsights/>
     <Analytics/>
