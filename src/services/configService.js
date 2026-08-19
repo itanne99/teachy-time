@@ -25,7 +25,7 @@ export async function getAppConfig(supabase) {
   }
 
   data.forEach((row) => {
-    const isNumeric = row.key === 'max_sounds_per_user' || row.key === 'max_label_length' || row.key === 'max_schedule_name_length'
+    const isNumeric = ['max_sounds_per_user', 'max_label_length', 'max_schedule_name_length'].includes(row.key)
     const isBoolean = row.key === 'Account_Creation'
     const isJsonArray = row.key === 'blocked_magic_link_domains'
     
