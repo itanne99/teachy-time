@@ -7,14 +7,15 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:start": "supabase start",
+    "db:start": "supabase start --ignore-health-check",
     "db:stop": "supabase stop",
     "db:pull": "supabase db pull",
     "db:push": "supabase db push",
     "db:push:local": "node scripts/db-run.js push",
     "db:diff": "supabase db diff -f",
     "db:list": "node scripts/db-run.js list",
-    "db:reset": "supabase stop --no-backup && supabase start"
+    "db:reset": "supabase stop --no-backup && supabase start",
+    "db:status": "supabase status"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
@@ -22,6 +23,7 @@
     "@tanstack/react-table": "^9.1.2",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
+    "agentation-mcp": "^1.2.0",
     "bootstrap": "^5.3.8",
     "bootswatch": "^5.3.7",
     "eslint-plugin-unicorn": "^65.0.1",

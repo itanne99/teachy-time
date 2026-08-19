@@ -2,24 +2,27 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Next.js: debug server-side",
+      "name": "Server: Next.js API & SSR",
       "type": "node-terminal",
       "request": "launch",
       "command": "yarn run dev",
       "preLaunchTask": "supabase: start"
     },
     {
-      "name": "Next.js: debug client-side",
+      "name": "Client (Chrome)",
       "type": "chrome",
       "request": "launch",
-      "url": "http://localhost:3000"
+      "url": "http://localhost:3000",
+      "userDataDir": "${workspaceFolder}/.vscode/chrome-debug-profile"
     },
     {
-      "name": "Next.js: debug client-side (Firefox)",
+      "name": "Client (Firefox)",
       "type": "firefox",
       "request": "launch",
       "url": "http://localhost:3000",
       "reAttach": true,
+      "profileDir": "${workspaceFolder}/.vscode/firefox-debug-profile",
+      "keepProfileChanges": true,
       "pathMappings": [
         {
           "url": "webpack://_N_E",
@@ -28,7 +31,7 @@
       ]
     },
     {
-      "name": "Next.js: debug full stack (Edge)",
+      "name": "Full Stack (Edge)",
       "type": "node",
       "request": "launch",
       "program": "${workspaceFolder}/node_modules/next/dist/bin/next",
@@ -44,22 +47,23 @@
         "pattern": "- Local:.+(https?://.+)",
         "uriFormat": "%s",
         "webRoot": "${workspaceFolder}"
-      }
+      },
+      "userDataDir": "${workspaceFolder}/.vscode/chrome-debug-profile"
     }
   ],
   "compounds": [
     {
-      "name": "Supabase + Next.js (Full Stack)",
+      "name": "Full Stack (Chrome)",
       "configurations": [
-        "Next.js: debug server-side",
-        "Next.js: debug client-side"
+        "Server: Next.js API & SSR",
+        "Client (Chrome)"
       ]
     },
     {
-      "name": "Supabase + Next.js (Full Stack - Firefox)",
+      "name": "Full Stack (Firefox)",
       "configurations": [
-        "Next.js: debug server-side",
-        "Next.js: debug client-side (Firefox)"
+        "Server: Next.js API & SSR",
+        "Client (Firefox)"
       ]
     }
   ]
