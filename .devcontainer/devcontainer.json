@@ -3,14 +3,14 @@
 {
 	"name": "Teachy Time Dev Container",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+	"image": "mcr.microsoft.com/devcontainers/base:noble",
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	"features": {
 		"ghcr.io/devcontainers/features/node:1.7.1": {},
 		"ghcr.io/devcontainers/features/git-lfs:1": {},
 		"ghcr.io/devcontainers/features/github-cli:1": {},
-		"ghcr.io/jsburckhardt/devcontainer-features/opencode:1": {}
+		"ghcr.io/jsburckhardt/devcontainer-features/opencode:1": { "version": "1.2.26" }
 	},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.

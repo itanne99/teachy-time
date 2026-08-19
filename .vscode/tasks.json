@@ -1,0 +1,32 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "supabase: start",
+      "type": "shell",
+      "command": "node",
+      "args": [
+        "-e",
+        "const { execSync } = require('child_process'); try { const out = execSync('npx supabase status').toString(); if (out.includes('local development setup is not running') || out.includes('not running')) { console.log('Starting Supabase...'); execSync('yarn db:start', {stdio: 'inherit'}); } else { console.log('Supabase already running.'); } } catch (e) { console.log('Starting Supabase...'); execSync('yarn db:start', {stdio: 'inherit'}); }"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "supabase: stop",
+      "type": "shell",
+      "command": "yarn",
+      "args": [
+        "db:stop"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
+    }
+  ]
+}

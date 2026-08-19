@@ -1,1 +1,8 @@
 * text=auto
+
+# Supabase Docker volumes must use LF for Linux containers
+volumes/**/*.sh eol=lf
+volumes/**/*.sql eol=lf
+volumes/**/*.yml eol=lf
+volumes/**/*.exs eol=lf
+volumes/**/*.ts eol=lf
