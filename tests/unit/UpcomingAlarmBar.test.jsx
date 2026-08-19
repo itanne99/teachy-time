@@ -3,12 +3,12 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import React from 'react'
 import { render, act } from '@testing-library/react'
 import UpcomingAlarmBar from '@/components/UpcomingAlarm/UpcomingAlarmBar'
-import { useStore } from '@/services/useStore'
+import { useAudioStore } from '@/services/stores/useAudioStore'
 
 describe('UpcomingAlarmBar Audio Triggering Lifecycle', () => {
   beforeEach(() => {
     vi.useFakeTimers()
-    useStore.setState({
+    useAudioStore.setState({
       audioSrc: '',
       isPlaying: false,
       userSounds: [],
@@ -41,13 +41,13 @@ describe('UpcomingAlarmBar Audio Triggering Lifecycle', () => {
     render(<UpcomingAlarmBar alarms={alarms} />)
 
     // Initial check: not playing yet
-    expect(useStore.getState().isPlaying).toBe(false)
+    expect(useAudioStore.getState().isPlaying).toBe(false)
 
     // Advance 1 second -> 09:59:59 (still active)
     act(() => {
       vi.advanceTimersByTime(1000)
     })
-    expect(useStore.getState().isPlaying).toBe(false)
+    expect(useAudioStore.getState().isPlaying).toBe(false)
 
     // Advance 2 seconds -> 10:00:01 (alarm ended)
     act(() => {
@@ -55,14 +55,14 @@ describe('UpcomingAlarmBar Audio Triggering Lifecycle', () => {
     })
 
     // Should have triggered playback
-    expect(useStore.getState().isPlaying).toBe(true)
+    expect(useAudioStore.getState().isPlaying).toBe(true)
 
     // Reset store playing state manually to verify it does not trigger a second time
-    useStore.setState({ isPlaying: false })
+    useAudioStore.setState({ isPlaying: false })
     act(() => {
       vi.advanceTimersByTime(5000)
     })
-    expect(useStore.getState().isPlaying).toBe(false)
+    expect(useAudioStore.getState().isPlaying).toBe(false)
   })
 
   it('does NOT trigger audio when switching days or updating alarms prop', () => {
@@ -92,7 +92,7 @@ describe('UpcomingAlarmBar Audio Triggering Lifecycle', () => {
     ]
 
     const { rerender } = render(<UpcomingAlarmBar alarms={mondayAlarms} />)
-    expect(useStore.getState().isPlaying).toBe(false)
+    expect(useAudioStore.getState().isPlaying).toBe(false)
 
     // Switch to Tuesday alarms prop
     rerender(<UpcomingAlarmBar alarms={tuesdayAlarms} />)
@@ -101,7 +101,7 @@ describe('UpcomingAlarmBar Audio Triggering Lifecycle', () => {
     })
 
     // Must NOT fire spurious chime
-    expect(useStore.getState().isPlaying).toBe(false)
+    expect(useAudioStore.getState().isPlaying).toBe(false)
   })
 
   it('does NOT trigger audio if alarm has play_sound set to false', () => {
@@ -126,7 +126,7 @@ describe('UpcomingAlarmBar Audio Triggering Lifecycle', () => {
       vi.advanceTimersByTime(3000)
     })
 
-    expect(useStore.getState().isPlaying).toBe(false)
+    expect(useAudioStore.getState().isPlaying).toBe(false)
   })
 
   it('triggers warning chime once when entering warning lead window', () => {
@@ -147,20 +147,20 @@ describe('UpcomingAlarmBar Audio Triggering Lifecycle', () => {
     ]
 
     render(<UpcomingAlarmBar alarms={alarms} />)
-    expect(useStore.getState().isPlaying).toBe(false)
+    expect(useAudioStore.getState().isPlaying).toBe(false)
 
     // Advance 3 seconds -> 09:57:01 (inside warning threshold)
     act(() => {
       vi.advanceTimersByTime(3000)
     })
 
-    expect(useStore.getState().isPlaying).toBe(true)
+    expect(useAudioStore.getState().isPlaying).toBe(true)
 
     // Reset playing state and ensure it does not fire warning repeatedly
-    useStore.setState({ isPlaying: false })
+    useAudioStore.setState({ isPlaying: false })
     act(() => {
       vi.advanceTimersByTime(10000)
     })
-    expect(useStore.getState().isPlaying).toBe(false)
+    expect(useAudioStore.getState().isPlaying).toBe(false)
   })
 })

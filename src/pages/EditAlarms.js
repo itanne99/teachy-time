@@ -7,17 +7,21 @@ import { ConfirmModal } from "@/components/models/ConfirmModal"
 import { PlusCircle, PencilSquare, Trash2, Copy, Clock, CalendarX, CheckCircle, ExclamationTriangle } from "react-bootstrap-icons"
 import { PRESET_WARNING_CHIMES } from "@/config/chimes"
 import { DAYS_OF_WEEK, API_ENDPOINTS } from "@/config/constants"
+import { useAlarmStore } from "@/services/stores/useAlarmStore"
+import { useAuthStore } from "@/services/stores/useAuthStore"
+import { useScheduleStore } from "@/services/stores/useScheduleStore"
+import { useAudioStore } from "@/services/stores/useAudioStore"
 
 const dayInitials = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
-export default function EditAlarms({ useStore }) {
+export default function EditAlarms() {
   const [activeDay, setActiveDay] = useState("")
-  const alarms = useStore((state) => state.alarms)
-  const setAlarms = useStore((state) => state.setAlarms)
-  const user = useStore((state) => state.user)
-  const currentScheduleId = useStore((state) => state.currentScheduleId)
-  const userSounds = useStore((state) => state.userSounds)
-  const warningLeadMinutes = useStore((state) => state.warningLeadMinutes)
+  const alarms = useAlarmStore((state) => state.alarms)
+  const setAlarms = useAlarmStore((state) => state.setAlarms)
+  const user = useAuthStore((state) => state.user)
+  const currentScheduleId = useScheduleStore((state) => state.currentScheduleId)
+  const userSounds = useAudioStore((state) => state.userSounds)
+  const warningLeadMinutes = useAudioStore((state) => state.warningLeadMinutes)
   const [sorting, setSorting] = React.useState([{ id: "start_time", desc: false }])
 
   const [showModal, setShowModal] = useState(false);

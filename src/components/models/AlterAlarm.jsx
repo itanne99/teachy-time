@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, Alert, Spinner } from 'react-bootstrap';
 import { Clock, Tag, ExclamationTriangle, MusicNoteBeamed, VolumeUp, Bell } from 'react-bootstrap-icons';
-import { useStore } from '@/services/useStore';
+import { useAudioStore } from '@/services/stores/useAudioStore';
+import { useConfigStore } from '@/services/stores/useConfigStore';
 import { PRESET_CHIMES, PRESET_WARNING_CHIMES } from '@/config/chimes';
 
 export const AlterAlarm = ({ show, onHide, onSave, alarm, day, validationError }) => {
   const [currentAlarm, setCurrentAlarm] = useState(alarm)
   const [isLoading, setIsLoading] = useState(false)
-  const userSounds = useStore((state) => state.userSounds)
-  const defaultSound = useStore((state) => state.defaultSound)
-  const warningLeadMinutes = useStore((state) => state.warningLeadMinutes)
-  const maxLabelLength = useStore((state) => state.maxLabelLength)
+  const userSounds = useAudioStore((state) => state.userSounds)
+  const defaultSound = useAudioStore((state) => state.defaultSound)
+  const warningLeadMinutes = useAudioStore((state) => state.warningLeadMinutes)
+  const maxLabelLength = useConfigStore((state) => state.maxLabelLength)
 
   useEffect(() => {
     setCurrentAlarm(alarm);

@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactAudioPlayer from 'react-audio-player';
 import { Container, Navbar } from 'react-bootstrap';
-import { useStore } from '@/services/useStore';
+import { useAudioStore } from '@/services/stores/useAudioStore';
 
 export const AudioPlayer = () => {
   const [isVisible, setIsVisible] = useState(false);
   const audioRef = useRef(null);
   
-  // Get state and actions from global store
-  const audioSrc = useStore((state) => state.audioSrc);
-  const isPlaying = useStore((state) => state.isPlaying);
-  const setIsPlaying = useStore((state) => state.setIsPlaying);
+  // Get state and actions from audio store
+  const audioSrc = useAudioStore((state) => state.audioSrc);
+  const isPlaying = useAudioStore((state) => state.isPlaying);
+  const setIsPlaying = useAudioStore((state) => state.setIsPlaying);
 
   // Sync internal player state with global store
   useEffect(() => {

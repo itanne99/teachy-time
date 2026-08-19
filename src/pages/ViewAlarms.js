@@ -5,9 +5,10 @@ import CommonUtils from "@/services/CommonUtils";
 import UpcomingAlarmBar from "@/components/UpcomingAlarm/UpcomingAlarmBar";
 import { Calendar3, PencilSquare, Clock } from "react-bootstrap-icons";
 import Link from "next/link";
+import { useAlarmStore } from "@/services/stores/useAlarmStore";
 
-function ViewAlarms({ useStore }) {
-  const alarms = useStore((state) => state.alarms);
+function ViewAlarms() {
+  const alarms = useAlarmStore((state) => state.alarms);
   const currentDay = CommonUtils.getCurrentDay();
   const todaysAlarms = alarms[currentDay] || [];
 

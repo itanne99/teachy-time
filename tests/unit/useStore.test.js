@@ -74,4 +74,15 @@ describe('useStore', () => {
     expect(useStore.getState().maxLabelLength).toBe(60)
     expect(useStore.getState().maxScheduleNameLength).toBe(120)
   })
+
+  it('synchronizes mutations across individual slices to useStore facade', () => {
+    useStore.getState().setAuthSuccessMessage('Email confirmed')
+    expect(useStore.getState().authSuccessMessage).toBe('Email confirmed')
+
+    useStore.getState().setForceLoginOpen(true)
+    expect(useStore.getState().forceLoginOpen).toBe(true)
+
+    useStore.getState().setAuthModalView('signup')
+    expect(useStore.getState().authModalView).toBe('signup')
+  })
 })
