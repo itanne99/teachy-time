@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import handler from '@/pages/api/alarmSounds'
 import { createApiRequest } from '../helpers/mockRequest'
 import createClient from '@/supabase/api'
+import { resetRateLimits } from '@/services/rateLimitService'
 
 vi.mock('@/supabase/api')
 vi.mock('@/supabase/supabaseService', () => ({
@@ -21,6 +22,7 @@ describe('API Route: /api/alarmSounds', () => {
 
   beforeEach(() => {
     vi.restoreAllMocks()
+    resetRateLimits()
   })
 
   it('returns 401 when unauthenticated', async () => {

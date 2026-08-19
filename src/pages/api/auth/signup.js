@@ -1,7 +1,11 @@
 import createClient from "@/supabase/api";
 import { getAppConfig } from "@/services/configService";
+import { applyRateLimit } from "@/services/rateLimitService";
+import { sanitizeString, validateEmail } from "@/services/validationService";
 
 export default async function handler(req, res) {
+  if (!applyRateLimit(req, res, { limit: 10, windowMs: 60_000 })) return;
+
   const { method, body } = req;
 
   if (method !== "POST") {
@@ -23,12 +27,25 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Missing required fields: email, password, full_name." });
     }
 
+    if (!validateEmail(email)) {
+      return res.status(400).json({ error: "Invalid email format." });
+    }
+
+    if (typeof password !== 'string' || password.length < 6) {
+      return res.status(400).json({ error: "Password must be at least 6 characters long." });
+    }
+
+    const sanitizedFullName = sanitizeString(full_name, 100);
+    if (!sanitizedFullName) {
+      return res.status(400).json({ error: "Full name cannot be empty." });
+    }
+
     const { data, error } = await supabase.auth.signUp({
-      email,
+      email: email.trim().toLowerCase(),
       password,
       options: {
         data: {
-          full_name,
+          full_name: sanitizedFullName,
         }
       }
     });

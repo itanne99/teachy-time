@@ -2,12 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import handler from '@/pages/api/auth/passwordRecovery'
 import { createApiRequest } from '../../helpers/mockRequest'
 import createClient from '@/supabase/api'
+import { resetRateLimits } from '@/services/rateLimitService'
 
 vi.mock('@/supabase/api')
 
 describe('API Route: /api/auth/passwordRecovery', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+    resetRateLimits()
   })
 
   it('returns 405 for non-POST/PATCH methods', async () => {
@@ -22,7 +24,7 @@ describe('API Route: /api/auth/passwordRecovery', () => {
     await handler(req, res)
 
     expect(res._getStatusCode()).toBe(400)
-    expect(res._getJSONData()).toEqual({ error: 'Missing required field: email.' })
+    expect(res._getJSONData().error).toMatch(/Missing required field/i)
   })
 
   it('returns 200 on successful password reset dispatch', async () => {

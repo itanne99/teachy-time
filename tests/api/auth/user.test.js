@@ -2,12 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import handler from '@/pages/api/auth/user'
 import { createApiRequest } from '../../helpers/mockRequest'
 import createClient from '@/supabase/api'
+import { resetRateLimits } from '@/services/rateLimitService'
 
 vi.mock('@/supabase/api')
 
 describe('API Route: /api/auth/user', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+    resetRateLimits()
   })
 
   it('returns active session data on GET', async () => {
@@ -31,7 +33,7 @@ describe('API Route: /api/auth/user', () => {
     await handler(req, res)
 
     expect(res._getStatusCode()).toBe(400)
-    expect(res._getJSONData()).toEqual({ error: 'Missing required fields: user_email, password.' })
+    expect(res._getJSONData().error).toMatch(/Missing required fields/i)
   })
 
   it('returns 200 on successful sign-in with password', async () => {

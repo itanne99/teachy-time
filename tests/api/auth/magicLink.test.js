@@ -2,12 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import handler from '@/pages/api/auth/magicLink'
 import { createApiRequest } from '../../helpers/mockRequest'
 import createClient from '@/supabase/api'
+import { resetRateLimits } from '@/services/rateLimitService'
 
 vi.mock('@/supabase/api')
 
 describe('API Route: /api/auth/magicLink', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+    resetRateLimits()
   })
 
   it('returns 405 for non-POST methods', async () => {
@@ -17,12 +19,12 @@ describe('API Route: /api/auth/magicLink', () => {
     expect(res._getStatusCode()).toBe(405)
   })
 
-  it('returns 400 when email is missing', async () => {
+  it('returns 400 when email is missing or invalid', async () => {
     const { req, res } = createApiRequest({ method: 'POST', body: {} })
     await handler(req, res)
 
     expect(res._getStatusCode()).toBe(400)
-    expect(res._getJSONData()).toEqual({ error: 'Missing required field: email.' })
+    expect(res._getJSONData().error).toMatch(/Missing required field/i)
   })
 
   it('returns 403 when email domain is in blocked list', async () => {

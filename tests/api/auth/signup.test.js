@@ -2,12 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import handler from '@/pages/api/auth/signup'
 import { createApiRequest } from '../../helpers/mockRequest'
 import createClient from '@/supabase/api'
+import { resetRateLimits } from '@/services/rateLimitService'
 
 vi.mock('@/supabase/api')
 
 describe('API Route: /api/auth/signup', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+    resetRateLimits()
   })
 
   it('returns 405 for non-POST methods', async () => {

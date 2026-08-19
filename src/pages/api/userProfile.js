@@ -1,6 +1,10 @@
 import createClient from "@/supabase/api";
+import { applyRateLimit } from "@/services/rateLimitService";
+import { sanitizeString, validateUUID } from "@/services/validationService";
 
 export default async function handler(req, res) {
+  if (!applyRateLimit(req, res, { limit: 100, windowMs: 60_000 })) return;
+
   const { method } = req;
 
   const supabase = createClient(req, res);
@@ -22,12 +26,16 @@ export default async function handler(req, res) {
     case "GET":
       try {
         const lookupUserId = req.query.user_id || user.id;
+        if (req.query.user_id && !validateUUID(req.query.user_id)) {
+          return res.status(400).json({ error: "Invalid user_id format." });
+        }
+
         let { data, error } = await getUserProfile(supabase, lookupUserId);
 
         // If an error does occur that is NOT "no rows found", throw it.
         if (error && error?.code !== "PGRST116") throw error;
 
-        if(error && error?.code === "PGRST116"){
+        if (error && error?.code === "PGRST116") {
           // return 404 if no profile found
           return res.status(404).json({ error: "User profile not found." });
         }
@@ -64,10 +72,22 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: "All fields are required. first_name, last_name, user_id, default_sound_id, default_preset_sound_id, warning_lead_minutes, or warning_chime_id" });
         }
 
+        const targetUserId = user_id || user.id;
+        if (targetUserId && !validateUUID(targetUserId)) {
+          return res.status(400).json({ error: "Invalid user_id format." });
+        }
+
+        if (warning_lead_minutes !== undefined) {
+          const leadMinutes = Number(warning_lead_minutes);
+          if (!Number.isInteger(leadMinutes) || leadMinutes < 1 || leadMinutes > 60) {
+            return res.status(400).json({ error: "warning_lead_minutes must be an integer between 1 and 60." });
+          }
+        }
+
         const updates = {
-          user_id: user_id,
-          first_name: first_name,
-          last_name: last_name,
+          user_id: targetUserId,
+          first_name: first_name !== undefined ? sanitizeString(first_name, 50) : undefined,
+          last_name: last_name !== undefined ? sanitizeString(last_name, 50) : undefined,
         };
 
         if (default_sound_id !== undefined) {
@@ -79,7 +99,7 @@ export default async function handler(req, res) {
           updates.default_sound_id = null;
         }
         if (warning_lead_minutes !== undefined) {
-          updates.warning_lead_minutes = warning_lead_minutes;
+          updates.warning_lead_minutes = Number(warning_lead_minutes);
         }
         if (warning_chime_id !== undefined) {
           updates.warning_chime_id = warning_chime_id;

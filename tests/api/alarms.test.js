@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import handler from '@/pages/api/alarms'
 import { createApiRequest } from '../helpers/mockRequest'
 import createClient from '@/supabase/api'
+import { resetRateLimits } from '@/services/rateLimitService'
 
 vi.mock('@/supabase/api')
 
@@ -10,6 +11,7 @@ describe('API Route: /api/alarms', () => {
 
   beforeEach(() => {
     vi.restoreAllMocks()
+    resetRateLimits()
   })
 
   it('returns 401 when user is unauthenticated', async () => {
@@ -27,7 +29,7 @@ describe('API Route: /api/alarms', () => {
     expect(res._getJSONData()).toEqual({ error: 'Unauthorized' })
   })
 
-  it('returns 400 when schedule_id is missing in POST', async () => {
+  it('returns 400 when schedule_id is missing or invalid in POST', async () => {
     mockSupabase = {
       auth: {
         getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'u-123' } }, error: null }),
@@ -39,7 +41,7 @@ describe('API Route: /api/alarms', () => {
     await handler(req, res)
 
     expect(res._getStatusCode()).toBe(400)
-    expect(res._getJSONData()).toEqual({ error: 'Schedule ID is required.' })
+    expect(res._getJSONData().error).toMatch(/Schedule ID/i)
   })
 
   it('returns formatted alarms grouped by day of week on POST with schedule_id', async () => {
@@ -85,7 +87,7 @@ describe('API Route: /api/alarms', () => {
     expect(json.Tuesday).toEqual([])
   })
 
-  it('returns 400 on PUT when required fields are missing', async () => {
+  it('returns 400 on PUT when required fields are missing or invalid', async () => {
     mockSupabase = {
       auth: {
         getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'u-123' } }, error: null }),
@@ -97,5 +99,29 @@ describe('API Route: /api/alarms', () => {
     await handler(req, res)
 
     expect(res._getStatusCode()).toBe(400)
+  })
+
+  it('rejects PUT with invalid time format', async () => {
+    mockSupabase = {
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'u-123' } }, error: null }),
+      },
+    }
+    vi.mocked(createClient).mockReturnValue(mockSupabase)
+
+    const { req, res } = createApiRequest({
+      method: 'PUT',
+      body: {
+        day_of_week: 1,
+        start_time: '25:00',
+        end_time: '26:00',
+        label: 'Bad Time',
+        schedule_id: 1,
+      },
+    })
+    await handler(req, res)
+
+    expect(res._getStatusCode()).toBe(400)
+    expect(res._getJSONData().error).toMatch(/Invalid time format/i)
   })
 })
