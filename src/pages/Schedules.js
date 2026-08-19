@@ -202,7 +202,7 @@ export default function Schedules() {
         </Card.Body>
       </Card>
 
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+      <Modal show={showModal} onHide={() => setShowModal(false)} centered enforceFocus={false}>
         <Modal.Header closeButton>
           <Modal.Title className="d-flex align-items-center gap-2">
             <Calendar3 size={20} />
@@ -230,7 +230,7 @@ export default function Schedules() {
         </Modal.Footer>
       </Modal>
 
-      <Modal show={showDeleteModal} onHide={() => { setShowDeleteModal(false); setPendingDelete(null); }} centered>
+      <Modal show={showDeleteModal} onHide={() => { setShowDeleteModal(false); setPendingDelete(null); }} centered enforceFocus={false}>
         <Modal.Header closeButton className="border-0 pb-0">
           <Modal.Title className="d-flex align-items-center gap-2 text-danger">
             <ExclamationTriangle size={22} />

@@ -30,7 +30,7 @@ export const AlterAlarm = ({ show, onHide, onSave, alarm, day, validationError }
   };
 
   return (
-    <Modal show={show} onHide={onHide} centered size="md">
+    <Modal show={show} onHide={onHide} centered size="md" enforceFocus={false}>
       <Modal.Header closeButton>
         <Modal.Title className="d-flex align-items-center gap-2">
           <Clock size={20} />

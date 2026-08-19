@@ -648,7 +648,7 @@ export default function Profile() {
         </Card.Body>
       </Card>
 
-      <Modal show={showDeleteSoundModal} onHide={() => { setShowDeleteSoundModal(false); setPendingSoundDelete(null); }} centered>
+      <Modal show={showDeleteSoundModal} onHide={() => { setShowDeleteSoundModal(false); setPendingSoundDelete(null); }} centered enforceFocus={false}>
         <Modal.Header closeButton className="border-0 pb-0">
           <Modal.Title className="d-flex align-items-center gap-2 text-danger">
             <Trash2 size={22} />

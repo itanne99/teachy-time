@@ -88,7 +88,7 @@ export const UpdatePasswordModal = () => {
   );
 
   return (
-    <Modal show={passwordResetFlag} onHide={() => setPasswordResetFlag(false)} centered>
+    <Modal show={passwordResetFlag} onHide={() => setPasswordResetFlag(false)} centered enforceFocus={false}>
       <Modal.Header closeButton className="border-0 pb-0">
         <Modal.Title className="d-flex align-items-center gap-2">
           <ShieldLock size={22} className="text-primary" />
