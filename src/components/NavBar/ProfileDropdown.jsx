@@ -4,6 +4,9 @@ import { Dropdown, Form, Button, Alert, Nav, Tab, InputGroup } from 'react-boots
 import { LoginHandler } from '@/services/LoginHandler';
 import { PersonCircle, Envelope, Lock, Magic, Eye, EyeSlash, ArrowRightShort, SendFill } from 'react-bootstrap-icons';
 import { SignupFormComponent } from './SignupFormComponent';
+import { useAlarmStore } from '@/services/stores/useAlarmStore';
+import { useConfigStore } from '@/services/stores/useConfigStore';
+import { useAuthStore } from '@/services/stores/useAuthStore';
 
 const CustomToggle = forwardRef(({ children, onClick }, ref) => (
   <Button
@@ -21,7 +24,7 @@ const CustomToggle = forwardRef(({ children, onClick }, ref) => (
   </Button>
 ));
 
-function ProfileDropdown({ useStore }) {
+function ProfileDropdown() {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,13 +32,13 @@ function ProfileDropdown({ useStore }) {
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [view, setView] = useState('login'); // 'login' or 'signup'
-  const setAlarms = useStore((state) => state.setAlarms);
-  const accountCreationEnabled = useStore((state) => state.Account_Creation);
-  const blockedMagicLinkDomains = useStore((state) => state.blocked_magic_link_domains) || [];
-  const authSuccessMessage = useStore((state) => state.authSuccessMessage);
-  const setAuthSuccessMessage = useStore((state) => state.setAuthSuccessMessage);
-  const forceLoginOpen = useStore((state) => state.forceLoginOpen);
-  const setForceLoginOpen = useStore((state) => state.setForceLoginOpen);
+  const setAlarms = useAlarmStore((state) => state.setAlarms);
+  const accountCreationEnabled = useConfigStore((state) => state.Account_Creation);
+  const blockedMagicLinkDomains = useConfigStore((state) => state.blocked_magic_link_domains) || [];
+  const authSuccessMessage = useAuthStore((state) => state.authSuccessMessage);
+  const setAuthSuccessMessage = useAuthStore((state) => state.setAuthSuccessMessage);
+  const forceLoginOpen = useAuthStore((state) => state.forceLoginOpen);
+  const setForceLoginOpen = useAuthStore((state) => state.setForceLoginOpen);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [isOpen, setIsOpen] = useState(false);

@@ -2,7 +2,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Container, Form, Button, Alert, Card, Row, Col, Spinner, Modal, Badge, Toast, ToastContainer } from "react-bootstrap";
 import supabase from "@/supabase/component";
 import { useRouter } from "next/router";
-import { useStore } from "@/services/useStore";
+import { useAuthStore } from "@/services/stores/useAuthStore";
+import { useAudioStore } from "@/services/stores/useAudioStore";
 import { UpdatePasswordModal } from "@/components/models/UpdatePassword";
 import { PersonCircle, Envelope, Key, PencilSquare, CheckCircle, Trash2, MusicNoteBeamed, Upload, Bell, Clock } from "react-bootstrap-icons";
 import ChimeCard from "@/components/ChimeCard";
@@ -32,12 +33,12 @@ export default function Profile() {
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
 
-  const passwordResetFlag = useStore((state) => state.passwordResetFlag);
-  const setPasswordResetFlag = useStore((state) => state.setPasswordResetFlag);
-  const setUserSounds = useStore((state) => state.setUserSounds);
-  const setDefaultSound = useStore((state) => state.setDefaultSound);
-  const setWarningLeadMinutes = useStore((state) => state.setWarningLeadMinutes);
-  const setWarningChimeId = useStore((state) => state.setWarningChimeId);
+  const passwordResetFlag = useAuthStore((state) => state.passwordResetFlag);
+  const setPasswordResetFlag = useAuthStore((state) => state.setPasswordResetFlag);
+  const setUserSounds = useAudioStore((state) => state.setUserSounds);
+  const setDefaultSound = useAudioStore((state) => state.setDefaultSound);
+  const setWarningLeadMinutes = useAudioStore((state) => state.setWarningLeadMinutes);
+  const setWarningChimeId = useAudioStore((state) => state.setWarningChimeId);
 
   const [userSounds, setUserSoundsLocal] = useState([]);
   const [defaultSoundId, setDefaultSoundId] = useState(null);

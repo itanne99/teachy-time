@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { ProgressBar, Badge } from "react-bootstrap";
 import CommonUtils from "@/services/CommonUtils";
-import { useStore } from "@/services/useStore";
+import { useAudioStore } from "@/services/stores/useAudioStore";
 import { Clock, HourglassSplit, CheckCircle } from "react-bootstrap-icons";
 import { resolveSoundUrl, DEFAULT_CHIME_URL, DEFAULT_WARNING_CHIME_URL, findPresetChime, findPresetWarningChime } from "@/config/chimes";
 import { createInitialAlarmTracker, evaluateAlarmAudioTriggers } from "@/services/alarmAudioService";
 
 function UpcomingAlarmBar({ alarms }) {
-  const setIsPlaying = useStore((state) => state.setIsPlaying);
-  const setAudioSrc = useStore((state) => state.setAudioSrc);
-  const defaultSound = useStore((state) => state.defaultSound);
-  const userSounds = useStore((state) => state.userSounds);
-  const warningLeadMinutes = useStore((state) => state.warningLeadMinutes);
-  const warningChimeId = useStore((state) => state.warningChimeId);
+  const setIsPlaying = useAudioStore((state) => state.setIsPlaying);
+  const setAudioSrc = useAudioStore((state) => state.setAudioSrc);
+  const defaultSound = useAudioStore((state) => state.defaultSound);
+  const userSounds = useAudioStore((state) => state.userSounds);
+  const warningLeadMinutes = useAudioStore((state) => state.warningLeadMinutes);
+  const warningChimeId = useAudioStore((state) => state.warningChimeId);
 
   const resolveAudioSrc = useCallback((alarm) => {
     if (!alarm) return DEFAULT_CHIME_URL;
