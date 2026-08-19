@@ -15,7 +15,9 @@ Execute these commands from the workspace root:
 - **Production Build:** `yarn run build`
 - **Start Production Server:** `yarn run start`
 - **Run Linter:** `yarn run lint`
-- **Run Tests:** `yarn run test` (or `npx vitest`)
+- **Run Logic & API Tests (Vitest):** `yarn run test`
+- **Run Test Coverage:** `yarn run test:coverage`
+- **Run E2E UI & Userflow Tests (Playwright):** `yarn run test:e2e` (or `yarn run test:e2e:ui`)
 
 ---
 
