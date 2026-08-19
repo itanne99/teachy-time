@@ -342,3 +342,96 @@
   border-color: #545759 !important;
 }
 
+/* 4:3 Aspect Ratio Auth Method Selector */
+.auth-method-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.auth-method-card {
+  aspect-ratio: 4 / 3;
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--tt-radius-md);
+  border: 1px solid #545759 !important;
+  background-color: rgba(84, 87, 89, 0.35) !important;
+  color: #c0c4c8 !important;
+  text-decoration: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  transition: all var(--tt-transition-base);
+}
+
+.auth-method-card:hover {
+  background-color: rgba(84, 87, 89, 0.65) !important;
+  color: #ffffff !important;
+  border-color: #797d81 !important;
+  transform: translateY(-2px);
+}
+
+.auth-method-card.active {
+  background-color: #545759 !important;
+  color: #ffffff !important;
+  border-color: var(--bs-primary) !important;
+  box-shadow: 0 0 0 1px var(--bs-primary), 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+  transform: translateY(-1px);
+}
+
+/* Legal Modal Styling */
+.legal-modal {
+  z-index: 1065 !important;
+}
+
+.legal-modal .modal-dialog {
+  max-width: 760px;
+}
+
+.legal-modal .modal-content {
+  border-radius: var(--tt-radius-xl);
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.legal-modal .modal-body {
+  max-height: 62vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  background-color: #ffffff !important;
+}
+
+.legal-modal .legal-content {
+  color: #1f2328 !important;
+}
+
+.legal-modal .legal-content p,
+.legal-modal .legal-content li {
+  color: #24292f !important;
+  font-size: 0.94rem;
+  line-height: 1.7;
+}
+
+.legal-modal .legal-content h6 {
+  color: #0f1115 !important;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.legal-modal .legal-content strong {
+  color: #0f1115 !important;
+}
+
+.legal-modal .legal-content section {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  padding-bottom: 1.25rem;
+}
+
+.legal-modal .legal-content section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+

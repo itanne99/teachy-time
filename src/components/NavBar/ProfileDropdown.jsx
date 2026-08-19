@@ -31,9 +31,28 @@ function ProfileDropdown({ useStore }) {
   const [view, setView] = useState('login'); // 'login' or 'signup'
   const setAlarms = useStore((state) => state.setAlarms);
   const accountCreationEnabled = useStore((state) => state.Account_Creation);
-  const allowedMagicLinkDomains = useStore((state) => state.allowed_magic_link_domains) || [];
+  const blockedMagicLinkDomains = useStore((state) => state.blocked_magic_link_domains) || [];
+  const authSuccessMessage = useStore((state) => state.authSuccessMessage);
+  const setAuthSuccessMessage = useStore((state) => state.setAuthSuccessMessage);
+  const forceLoginOpen = useStore((state) => state.forceLoginOpen);
+  const setForceLoginOpen = useStore((state) => state.setForceLoginOpen);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Sync global forceLoginOpen to local dropdown state
+  React.useEffect(() => {
+    if (forceLoginOpen) {
+      setIsOpen(true);
+    }
+  }, [forceLoginOpen]);
+
+  // Display global auth success message if it exists
+  React.useEffect(() => {
+    if (authSuccessMessage && view === 'login') {
+      setSuccessMsg(authSuccessMessage);
+    }
+  }, [authSuccessMessage, view]);
 
   const validateEmail = (val) => {
     if (!val) return 'Email address is required.';
@@ -66,12 +85,12 @@ function ProfileDropdown({ useStore }) {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    
+
     setTouched(prev => ({ ...prev, email: true, password: true }));
     const emailErr = validateEmail(email);
     const passErr = validatePassword(password);
     setErrors(prev => ({ ...prev, email: emailErr, password: passErr }));
-    
+
     if (emailErr || passErr) return;
 
     setError('');
@@ -85,7 +104,7 @@ function ProfileDropdown({ useStore }) {
     setTouched(prev => ({ ...prev, email: true }));
     const emailErr = validateEmail(email);
     setErrors(prev => ({ ...prev, email: emailErr }));
-    
+
     if (emailErr) return;
 
     setError('');
@@ -114,13 +133,13 @@ function ProfileDropdown({ useStore }) {
     setTouched(prev => ({ ...prev, email: true }));
     const emailErr = validateEmail(email);
     setErrors(prev => ({ ...prev, email: emailErr }));
-    
+
     if (emailErr) return;
 
     setError('');
     setSuccessMsg('');
     const emailDomain = '@' + email.split('@')[1];
-    if (!allowedMagicLinkDomains.includes(emailDomain)) {
+    if (blockedMagicLinkDomains.includes(emailDomain)) {
       setError(`The domain ${emailDomain} is not authorized for magic link logins.`);
       return;
     }
@@ -145,8 +164,46 @@ function ProfileDropdown({ useStore }) {
     setIsLoading(false);
   };
 
+  const isLegalModalOpenRef = React.useRef(false);
+  const lastModalClosedTimeRef = React.useRef(0);
+
+  const handleLegalModalToggle = (isOpenModal) => {
+    isLegalModalOpenRef.current = isOpenModal;
+    if (!isOpenModal) {
+      lastModalClosedTimeRef.current = Date.now();
+    }
+  };
+
   return (
-    <Dropdown autoClose="outside">
+    <Dropdown
+      autoClose="outside"
+      show={isOpen}
+      onToggle={(nextShow, event) => {
+        if (!nextShow) {
+          // If legal modal is currently active or was closed in the last 600ms, ignore close event
+          if (isLegalModalOpenRef.current || (Date.now() - lastModalClosedTimeRef.current < 600)) {
+            return;
+          }
+          const isModalOpen = typeof document !== 'undefined' && document.querySelector('.modal.show, .modal-backdrop.show, .legal-modal.show');
+          const isClickInsideModal = event?.target && (
+            event.target.closest?.('.modal, .modal-backdrop, .modal-dialog, .legal-modal') ||
+            event.target.classList?.contains('modal') ||
+            event.target.classList?.contains('modal-backdrop')
+          );
+          if (isModalOpen || isClickInsideModal) {
+            return;
+          }
+        }
+
+        setIsOpen(nextShow);
+        if (!nextShow) {
+          setForceLoginOpen(false);
+          setAuthSuccessMessage('');
+          setSuccessMsg('');
+          setError('');
+        }
+      }}
+    >
       <Dropdown.Toggle as={CustomToggle} id="dropdown-custom-components">
         Sign In
       </Dropdown.Toggle>
@@ -160,16 +217,17 @@ function ProfileDropdown({ useStore }) {
 
         <div className="p-3 pt-0">
           {view === 'signup' ? (
-            <SignupFormComponent 
-              accountCreationEnabled={accountCreationEnabled} 
-              onBackToLogin={() => setView('login')} 
+            <SignupFormComponent
+              accountCreationEnabled={accountCreationEnabled}
+              onBackToLogin={() => setView('login')}
               isDarkTheme={true}
+              onLegalModalToggle={handleLegalModalToggle}
             />
           ) : (
             <>
               {error && <Alert variant="danger" className="mb-3 py-2 small border-0"><i className="bi bi-exclamation-circle-fill me-1"></i> {error}</Alert>}
               {successMsg && <Alert variant="success" className="mb-3 py-2 small border-0"><i className="bi bi-check-circle-fill me-1"></i> {successMsg}</Alert>}
-              
+
               <Tab.Container defaultActiveKey="password">
                 <Nav variant="pills" className="nav-justified mb-3 custom-nav-pills p-1 bg-custom-dark rounded" style={{ fontSize: '0.9rem' }}>
                   <Nav.Item>
@@ -187,24 +245,24 @@ function ProfileDropdown({ useStore }) {
                 <Tab.Content>
                   <Tab.Pane eventKey="password">
                     <Form onSubmit={handleLogin} noValidate>
-                    <Form.Group className="mb-3">
-                      <Form.Label className="small fw-semibold text-secondary mb-1">
-                        Email Address
-                      </Form.Label>
-                      <InputGroup className={touched.email && errors.email ? 'is-invalid' : ''}>
-                        <InputGroup.Text className={`bg-custom-dark text-white border-custom-dark border-end-0 ${touched.email && errors.email ? 'border-danger text-danger' : ''}`}><Envelope size={14} /></InputGroup.Text>
-                        <Form.Control 
-                          type="email" 
-                          placeholder="teacher@school.edu" 
-                          value={email} 
-                          onChange={(e) => handleChange('email', e.target.value, setEmail)}
-                          onBlur={(e) => handleBlur('email', e.target.value)}
-                          className={`border-custom-dark border-start-0 ps-2 ${touched.email && errors.email ? 'border-danger' : ''}`}
-                          isInvalid={touched.email && !!errors.email}
-                        />
-                      </InputGroup>
-                      {touched.email && errors.email && <div className="text-danger small mt-1">{errors.email}</div>}
-                    </Form.Group>
+                      <Form.Group className="mb-3">
+                        <Form.Label className="small fw-semibold text-secondary mb-1">
+                          Email Address
+                        </Form.Label>
+                        <InputGroup className={touched.email && errors.email ? 'is-invalid' : ''}>
+                          <InputGroup.Text className={`bg-custom-dark text-white border-custom-dark border-end-0 ${touched.email && errors.email ? 'border-danger text-danger' : ''}`}><Envelope size={14} /></InputGroup.Text>
+                          <Form.Control
+                            type="email"
+                            placeholder="teacher@school.edu"
+                            value={email}
+                            onChange={(e) => handleChange('email', e.target.value, setEmail)}
+                            onBlur={(e) => handleBlur('email', e.target.value)}
+                            className={`border-custom-dark border-start-0 ps-2 ${touched.email && errors.email ? 'border-danger' : ''}`}
+                            isInvalid={touched.email && !!errors.email}
+                          />
+                        </InputGroup>
+                        {touched.email && errors.email && <div className="text-danger small mt-1">{errors.email}</div>}
+                      </Form.Group>
 
                       <Form.Group className="mb-2">
                         <div className="d-flex justify-content-between align-items-center mb-1">
@@ -212,25 +270,25 @@ function ProfileDropdown({ useStore }) {
                           <a href="#" onClick={sendPasswordResetEmail} className="text-decoration-none small text-primary">Forgot?</a>
                         </div>
                         <InputGroup className={touched.password && errors.password ? 'is-invalid' : ''}>
-                        <InputGroup.Text className={`bg-custom-dark text-white border-custom-dark border-end-0 ${touched.password && errors.password ? 'border-danger text-danger' : ''}`}><Lock size={14} /></InputGroup.Text>
-                        <Form.Control 
-                          type={showPassword ? "text" : "password"} 
-                          placeholder="••••••••" 
-                          value={password} 
-                          onChange={(e) => handleChange('password', e.target.value, setPassword)}
-                          onBlur={(e) => handleBlur('password', e.target.value)}
-                          className={`border-custom-dark border-start-0 border-end-0 ps-2 ${touched.password && errors.password ? 'border-danger' : ''}`}
-                          isInvalid={touched.password && !!errors.password}
-                        />
-                        <Button variant="outline-secondary" className={`border-custom-dark border-start-0 password-toggle-btn ${touched.password && errors.password ? 'border-danger text-danger' : ''}`} onClick={() => setShowPassword(!showPassword)}>
-                          {showPassword ? <EyeSlash size={16} /> : <Eye size={16} />}
-                        </Button>
-                      </InputGroup>
-                      {touched.password && errors.password && <div className="text-danger small mt-1">{errors.password}</div>}
-                    </Form.Group>
+                          <InputGroup.Text className={`bg-custom-dark text-white border-custom-dark border-end-0 ${touched.password && errors.password ? 'border-danger text-danger' : ''}`}><Lock size={14} /></InputGroup.Text>
+                          <Form.Control
+                            type={showPassword ? "text" : "password"}
+                            placeholder="••••••••"
+                            value={password}
+                            onChange={(e) => handleChange('password', e.target.value, setPassword)}
+                            onBlur={(e) => handleBlur('password', e.target.value)}
+                            className={`border-custom-dark border-start-0 border-end-0 ps-2 ${touched.password && errors.password ? 'border-danger' : ''}`}
+                            isInvalid={touched.password && !!errors.password}
+                          />
+                          <Button variant="outline-secondary" className={`border-custom-dark border-start-0 password-toggle-btn ${touched.password && errors.password ? 'border-danger text-danger' : ''}`} onClick={() => setShowPassword(!showPassword)}>
+                            {showPassword ? <EyeSlash size={16} /> : <Eye size={16} />}
+                          </Button>
+                        </InputGroup>
+                        {touched.password && errors.password && <div className="text-danger small mt-1">{errors.password}</div>}
+                      </Form.Group>
 
                       <Form.Group className="mb-3">
-                        <Form.Check 
+                        <Form.Check
                           type="checkbox"
                           id="dropdownRememberMe"
                           label="Remember me for 30 days"
@@ -238,11 +296,11 @@ function ProfileDropdown({ useStore }) {
                         />
                       </Form.Group>
 
-                      <Button 
-                        variant="primary" 
-                        type="submit" 
+                      <Button
+                        variant="primary"
+                        type="submit"
                         disabled={isLoading}
-                        className="w-100 fw-semibold d-flex align-items-center justify-content-center gap-2"
+                        className="w-100 fw-semibold d-flex align-items-center justify-content-center gap-1"
                       >
                         <span>{isLoading ? 'Signing in...' : 'Sign In'}</span>
                         {!isLoading && <ArrowRightShort size={24} />}
@@ -255,28 +313,28 @@ function ProfileDropdown({ useStore }) {
                       <i className="bi bi-info-circle me-1"></i> We'll email you a secure link so you can sign in without a password.
                     </div>
                     <Form onSubmit={sendMagicLink} noValidate>
-                    <Form.Group className="mb-4">
-                      <Form.Label className="small fw-semibold text-secondary mb-1">
-                        Work or School Email
-                      </Form.Label>
-                      <InputGroup className={touched.email && errors.email ? 'is-invalid' : ''}>
-                        <InputGroup.Text className={`bg-custom-dark text-white border-custom-dark border-end-0 ${touched.email && errors.email ? 'border-danger text-danger' : ''}`}><Envelope size={14} /></InputGroup.Text>
-                        <Form.Control 
-                          type="email" 
-                          placeholder="teacher@school.edu" 
-                          value={email} 
-                          onChange={(e) => handleChange('email', e.target.value, setEmail)}
-                          onBlur={(e) => handleBlur('email', e.target.value)}
-                          className={`border-custom-dark border-start-0 ps-2 ${touched.email && errors.email ? 'border-danger' : ''}`}
-                          isInvalid={touched.email && !!errors.email}
-                        />
-                      </InputGroup>
-                      {touched.email && errors.email && <div className="text-danger small mt-1">{errors.email}</div>}
-                    </Form.Group>
+                      <Form.Group className="mb-4">
+                        <Form.Label className="small fw-semibold text-secondary mb-1">
+                          Work or School Email
+                        </Form.Label>
+                        <InputGroup className={touched.email && errors.email ? 'is-invalid' : ''}>
+                          <InputGroup.Text className={`bg-custom-dark text-white border-custom-dark border-end-0 ${touched.email && errors.email ? 'border-danger text-danger' : ''}`}><Envelope size={14} /></InputGroup.Text>
+                          <Form.Control
+                            type="email"
+                            placeholder="teacher@school.edu"
+                            value={email}
+                            onChange={(e) => handleChange('email', e.target.value, setEmail)}
+                            onBlur={(e) => handleBlur('email', e.target.value)}
+                            className={`border-custom-dark border-start-0 ps-2 ${touched.email && errors.email ? 'border-danger' : ''}`}
+                            isInvalid={touched.email && !!errors.email}
+                          />
+                        </InputGroup>
+                        {touched.email && errors.email && <div className="text-danger small mt-1">{errors.email}</div>}
+                      </Form.Group>
 
-                      <Button 
-                        variant="primary" 
-                        type="submit" 
+                      <Button
+                        variant="primary"
+                        type="submit"
                         disabled={isLoading}
                         className="w-100 fw-semibold d-flex align-items-center justify-content-center gap-2"
                       >

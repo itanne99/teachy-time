@@ -12,13 +12,30 @@ export const LoginForm = ({ show, onHide, useStore }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-  const [view, setView] = useState('login'); // 'login' or 'signup'
+  const authModalView = useStore((state) => state.authModalView);
+  const setAuthModalView = useStore((state) => state.setAuthModalView);
+  const [view, setView] = useState(authModalView || 'login'); // 'login' or 'signup'
   const setAlarms = useStore((state) => state.setAlarms);
   const session = useStore((state) => state.session);
   const accountCreationEnabled = useStore((state) => state.Account_Creation);
   const blockedMagicLinkDomains = useStore((state) => state.blocked_magic_link_domains) || [];
+  const authSuccessMessage = useStore((state) => state.authSuccessMessage);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
+
+  // Sync view when authModalView or show changes
+  useEffect(() => {
+    if (show && authModalView) {
+      setView(authModalView);
+    }
+  }, [show, authModalView]);
+
+  // Display global auth success message if it exists
+  useEffect(() => {
+    if (authSuccessMessage && view === 'login') {
+      setSuccessMsg(authSuccessMessage);
+    }
+  }, [authSuccessMessage, view]);
 
   // Auto-close modal when session becomes active (successful login)
   useEffect(() => {
@@ -62,12 +79,12 @@ export const LoginForm = ({ show, onHide, useStore }) => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    
+
     setTouched(prev => ({ ...prev, email: true, password: true }));
     const emailErr = validateEmail(email);
     const passErr = validatePassword(password);
     setErrors(prev => ({ ...prev, email: emailErr, password: passErr }));
-    
+
     if (emailErr || passErr) return;
 
     setError('');
@@ -81,7 +98,7 @@ export const LoginForm = ({ show, onHide, useStore }) => {
     setTouched(prev => ({ ...prev, email: true }));
     const emailErr = validateEmail(email);
     setErrors(prev => ({ ...prev, email: emailErr }));
-    
+
     if (emailErr) return;
 
     setError('');
@@ -110,7 +127,7 @@ export const LoginForm = ({ show, onHide, useStore }) => {
     setTouched(prev => ({ ...prev, email: true }));
     const emailErr = validateEmail(email);
     setErrors(prev => ({ ...prev, email: emailErr }));
-    
+
     if (emailErr) return;
 
     setError('');
@@ -142,7 +159,14 @@ export const LoginForm = ({ show, onHide, useStore }) => {
   };
 
   return (
-    <Modal show={show} onHide={onHide} centered>
+    <Modal
+      show={show}
+      onHide={onHide}
+      centered
+      enforceFocus={false}
+      data-bs-theme="dark"
+      contentClassName="bg-dark text-white border-secondary border-opacity-25 shadow-lg"
+    >
       <Modal.Header closeButton className="border-0 pb-0">
         <Modal.Title className="d-flex align-items-center gap-2">
           <PersonCircle size={22} className="text-primary" />
@@ -154,28 +178,37 @@ export const LoginForm = ({ show, onHide, useStore }) => {
           <h6 className="fw-bold mb-1">{view === 'login' ? 'Welcome back to Teachy Time' : 'Create Your Account'}</h6>
           <p className="text-muted small mb-0">{view === 'login' ? 'Select your preferred sign-in method' : 'Join Teachy Time to organize your schedule'}</p>
         </div>
-
         {view === 'signup' ? (
-          <SignupFormComponent 
-            accountCreationEnabled={accountCreationEnabled} 
-            onBackToLogin={() => setView('login')} 
-            isDarkTheme={false}
+          <SignupFormComponent
+            accountCreationEnabled={accountCreationEnabled}
+            onBackToLogin={() => setView('login')}
+            isDarkTheme={true}
           />
         ) : (
           <>
             {error && <Alert variant="danger" className="mb-3 py-2 small border-0"><i className="bi bi-exclamation-circle-fill me-1"></i> {error}</Alert>}
             {successMsg && <Alert variant="success" className="mb-3 py-2 small border-0"><i className="bi bi-check-circle-fill me-1"></i> {successMsg}</Alert>}
-            
+
             <Tab.Container defaultActiveKey="password">
-              <Nav variant="pills" className="nav-justified mb-3 custom-nav-pills-modal login-dropdown-menu border-0 shadow-none w-100 p-0 m-0" style={{ fontSize: '0.95rem' }}>
+              <Nav className="auth-method-selector mb-3 p-0 border-0">
                 <Nav.Item>
-                  <Nav.Link eventKey="password" onClick={() => { setError(''); setSuccessMsg(''); }} className="py-2">
-                    <Lock className="me-1" size={14} /> Password
+                  <Nav.Link
+                    eventKey="password"
+                    onClick={() => { setError(''); setSuccessMsg(''); }}
+                    className="auth-method-card"
+                  >
+                    <Lock size={22} className="mb-1" />
+                    <span className="small fw-semibold">Password</span>
                   </Nav.Link>
                 </Nav.Item>
                 <Nav.Item>
-                  <Nav.Link eventKey="magiclink" onClick={() => { setError(''); setSuccessMsg(''); }} className="py-2">
-                    <Magic className="me-1" size={14} /> Magic Link
+                  <Nav.Link
+                    eventKey="magiclink"
+                    onClick={() => { setError(''); setSuccessMsg(''); }}
+                    className="auth-method-card"
+                  >
+                    <Magic size={22} className="mb-1" />
+                    <span className="small fw-semibold">Magic Link</span>
                   </Nav.Link>
                 </Nav.Item>
               </Nav>
@@ -188,14 +221,14 @@ export const LoginForm = ({ show, onHide, useStore }) => {
                         Email Address
                       </Form.Label>
                       <InputGroup className={touched.email && errors.email ? 'is-invalid' : ''}>
-                        <InputGroup.Text className={`bg-light text-secondary border-end-0 ${touched.email && errors.email ? 'border-danger text-danger' : ''}`}><Envelope size={14} /></InputGroup.Text>
-                        <Form.Control 
-                          type="email" 
-                          placeholder="teacher@school.edu" 
-                          value={email} 
+                        <InputGroup.Text className={`bg-custom-dark text-white border-custom-dark border-end-0 ${touched.email && errors.email ? 'border-danger text-danger' : ''}`}><Envelope size={14} /></InputGroup.Text>
+                        <Form.Control
+                          type="email"
+                          placeholder="teacher@school.edu"
+                          value={email}
                           onChange={(e) => handleChange('email', e.target.value, setEmail)}
                           onBlur={(e) => handleBlur('email', e.target.value)}
-                          className={`border-start-0 ps-0 form-control-focus-ring ${touched.email && errors.email ? 'border-danger' : ''}`}
+                          className={`border-custom-dark border-start-0 ps-2 ${touched.email && errors.email ? 'border-danger' : ''}`}
                           isInvalid={touched.email && !!errors.email}
                         />
                       </InputGroup>
@@ -208,17 +241,17 @@ export const LoginForm = ({ show, onHide, useStore }) => {
                         <a href="#" onClick={sendPasswordResetEmail} className="text-decoration-none small text-primary">Forgot?</a>
                       </div>
                       <InputGroup className={touched.password && errors.password ? 'is-invalid' : ''}>
-                        <InputGroup.Text className={`bg-light text-secondary border-end-0 ${touched.password && errors.password ? 'border-danger text-danger' : ''}`}><Lock size={14} /></InputGroup.Text>
-                        <Form.Control 
-                          type={showPassword ? "text" : "password"} 
-                          placeholder="••••••••" 
-                          value={password} 
+                        <InputGroup.Text className={`bg-custom-dark text-white border-custom-dark border-end-0 ${touched.password && errors.password ? 'border-danger text-danger' : ''}`}><Lock size={14} /></InputGroup.Text>
+                        <Form.Control
+                          type={showPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          value={password}
                           onChange={(e) => handleChange('password', e.target.value, setPassword)}
                           onBlur={(e) => handleBlur('password', e.target.value)}
-                          className={`border-start-0 border-end-0 ps-0 ${touched.password && errors.password ? 'border-danger' : ''}`}
+                          className={`border-custom-dark border-start-0 border-end-0 ps-2 ${touched.password && errors.password ? 'border-danger' : ''}`}
                           isInvalid={touched.password && !!errors.password}
                         />
-                        <Button variant="outline-secondary" className={`border-start-0 password-toggle-btn ${touched.password && errors.password ? 'border-danger text-danger' : ''}`} onClick={() => setShowPassword(!showPassword)}>
+                        <Button variant="outline-secondary" className={`border-custom-dark border-start-0 password-toggle-btn ${touched.password && errors.password ? 'border-danger text-danger' : ''}`} onClick={() => setShowPassword(!showPassword)}>
                           {showPassword ? <EyeSlash size={16} /> : <Eye size={16} />}
                         </Button>
                       </InputGroup>
@@ -226,7 +259,7 @@ export const LoginForm = ({ show, onHide, useStore }) => {
                     </Form.Group>
 
                     <Form.Group className="mb-3">
-                      <Form.Check 
+                      <Form.Check
                         type="checkbox"
                         id="modalRememberMe"
                         label="Remember me for 30 days"
@@ -234,14 +267,14 @@ export const LoginForm = ({ show, onHide, useStore }) => {
                       />
                     </Form.Group>
 
-                    <Button 
-                      variant="primary" 
-                      type="submit" 
+                    <Button
+                      variant="primary"
+                      type="submit"
                       disabled={isLoading}
-                      className="w-100 fw-semibold d-flex align-items-center justify-content-center gap-2"
+                      className="w-100 fw-semibold d-flex align-items-center justify-content-center gap-1"
                     >
                       <span>{isLoading ? 'Signing in...' : 'Sign In'}</span>
-                      {!isLoading && <ArrowRightShort size={24} />}
+                      {!isLoading && <ArrowRightShort size={21} />}
                     </Button>
                   </Form>
                 </Tab.Pane>
@@ -256,23 +289,23 @@ export const LoginForm = ({ show, onHide, useStore }) => {
                         Work or School Email
                       </Form.Label>
                       <InputGroup className={touched.email && errors.email ? 'is-invalid' : ''}>
-                        <InputGroup.Text className={`bg-light text-secondary border-end-0 ${touched.email && errors.email ? 'border-danger text-danger' : ''}`}><Envelope size={14} /></InputGroup.Text>
-                        <Form.Control 
-                          type="email" 
-                          placeholder="teacher@school.edu" 
-                          value={email} 
+                        <InputGroup.Text className={`bg-custom-dark text-white border-custom-dark border-end-0 ${touched.email && errors.email ? 'border-danger text-danger' : ''}`}><Envelope size={14} /></InputGroup.Text>
+                        <Form.Control
+                          type="email"
+                          placeholder="teacher@school.edu"
+                          value={email}
                           onChange={(e) => handleChange('email', e.target.value, setEmail)}
                           onBlur={(e) => handleBlur('email', e.target.value)}
-                          className={`border-start-0 ps-0 ${touched.email && errors.email ? 'border-danger' : ''}`}
+                          className={`border-custom-dark border-start-0 ps-2 ${touched.email && errors.email ? 'border-danger' : ''}`}
                           isInvalid={touched.email && !!errors.email}
                         />
                       </InputGroup>
                       {touched.email && errors.email && <div className="text-danger small mt-1">{errors.email}</div>}
                     </Form.Group>
 
-                    <Button 
-                      variant="primary" 
-                      type="submit" 
+                    <Button
+                      variant="primary"
+                      type="submit"
                       disabled={isLoading}
                       className="w-100 fw-semibold d-flex align-items-center justify-content-center gap-2"
                     >
@@ -284,17 +317,17 @@ export const LoginForm = ({ show, onHide, useStore }) => {
               </Tab.Content>
             </Tab.Container>
 
-            <hr className="my-3 text-border" />
-            <div className="text-center">
-              <span className="small text-muted">Don't have an account? </span>
-              {accountCreationEnabled ? (
-                <a href="#" onClick={(e) => { e.preventDefault(); setView('signup'); }} className="small text-primary fw-semibold text-decoration-none">
-                  Sign up
-                </a>
-              ) : (
-                 <span className="small text-muted text-decoration-line-through">Create Account</span>
-              )}
-            </div>
+            {accountCreationEnabled && (
+              <>
+                <hr className="my-3 text-border" />
+                <div className="text-center">
+                  <span className="small text-muted">Don't have an account? </span>
+                  <a href="#" onClick={(e) => { e.preventDefault(); setView('signup'); }} className="small text-primary fw-semibold text-decoration-none">
+                    Sign up
+                  </a>
+                </div>
+              </>
+            )}
           </>
         )}
       </Modal.Body>

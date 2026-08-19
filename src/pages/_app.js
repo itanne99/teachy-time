@@ -23,6 +23,25 @@ export default function App({ Component, pageProps }) {
   const currentScheduleId = useStore((state) => state.currentScheduleId);
   const setCurrentScheduleId = useStore((state) => state.setCurrentScheduleId);
   const session = useStore((state) => state.session);
+  const setAuthSuccessMessage = useStore((state) => state.setAuthSuccessMessage);
+  const setForceLoginOpen = useStore((state) => state.setForceLoginOpen);
+
+  useEffect(() => {
+    // Check for email confirmation hash in URL
+    if (globalThis.window !== undefined && globalThis.window.location.hash) {
+      const hashParams = new URLSearchParams(globalThis.window.location.hash.slice(1));
+      if (hashParams.get('type') === 'signup') {
+        // Clear the hash from URL so it doesn't process again
+        globalThis.window.history.replaceState(null, '', globalThis.window.location.pathname + globalThis.window.location.search);
+        
+        // Ensure they are logged out so the login UI shows
+        supabase.auth.signOut().then(() => {
+          setAuthSuccessMessage('Email Confirmed! Please login again.');
+          setForceLoginOpen(true);
+        });
+      }
+    }
+  }, [setAuthSuccessMessage, setForceLoginOpen]);
 
   useEffect(() => {
     const fetchSchedules = async (currentSession) => {
@@ -168,6 +187,6 @@ export default function App({ Component, pageProps }) {
     <AudioPlayer />
     <SpeedInsights/>
     <Analytics/>
-    {process.env.NODE_ENV === 'development' && <Agentation />}
+    {process.env.NODE_ENV === 'development' && <Agentation endpoint="http://localhost:4747" />}
   </Container>);
 }

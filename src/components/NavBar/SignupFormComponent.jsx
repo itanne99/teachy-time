@@ -1,8 +1,14 @@
 import React, { useState } from 'react';
 import { Form, Button, Alert, InputGroup } from 'react-bootstrap';
 import { PersonExclamation, ExclamationTriangleFill, Lock, Envelope, Eye, EyeSlash, PersonCircle, CheckCircleFill, Circle, XCircleFill, Check2Circle } from 'react-bootstrap-icons';
+import { LegalModal } from '@/components/Legal/LegalModal';
 
-export const SignupFormComponent = ({ accountCreationEnabled, onBackToLogin, isDarkTheme }) => {
+export const SignupFormComponent = ({
+  accountCreationEnabled,
+  onBackToLogin,
+  isDarkTheme,
+  onLegalModalToggle
+}) => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -10,10 +16,24 @@ export const SignupFormComponent = ({ accountCreationEnabled, onBackToLogin, isD
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [showLegalModal, setShowLegalModal] = useState(false);
+  const [legalModalType, setLegalModalType] = useState('terms');
+
+  const handleOpenLegalModal = (type) => {
+    setLegalModalType(type);
+    setShowLegalModal(true);
+    onLegalModalToggle?.(true);
+  };
+
+  const handleCloseLegalModal = () => {
+    setShowLegalModal(false);
+    onLegalModalToggle?.(false);
+  };
   
   const [loading, setLoading] = useState(false);
   const [globalError, setGlobalError] = useState('');
   const [success, setSuccess] = useState('');
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
@@ -139,10 +159,7 @@ export const SignupFormComponent = ({ accountCreationEnabled, onBackToLogin, isD
         throw new Error(data.message || "Failed to create account.");
       }
 
-      setSuccess("Account created successfully! You can now sign in.");
-      setTimeout(() => {
-        onBackToLogin();
-      }, 3000);
+      setIsSubmitted(true);
 
     } catch (err) {
       setGlobalError(err.message);
@@ -177,7 +194,25 @@ export const SignupFormComponent = ({ accountCreationEnabled, onBackToLogin, isD
     );
   }
 
-  const baseInputGroupTextClass = isDarkTheme 
+  if (isSubmitted) {
+    return (
+      <div className="text-center py-4">
+        <div className="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle mb-3" style={{ width: '56px', height: '56px', fontSize: '1.75rem' }}>
+          <Envelope />
+        </div>
+        <h5 className={`fw-bold mb-2 ${isDarkTheme ? 'text-white' : 'text-dark'}`}>Check your email</h5>
+        <p className={`small mb-4 ${isDarkTheme ? 'text-white-50' : 'text-muted'}`}>
+          We've sent a verification link to <strong className={isDarkTheme ? 'text-white' : 'text-dark'}>{email}</strong>. 
+          Please click the link to verify your account before signing in.
+        </p>
+        <Button variant="primary" className="w-100 fw-semibold" onClick={onBackToLogin}>
+          Back to Sign In
+        </Button>
+      </div>
+    );
+  }
+
+  const baseInputGroupTextClass = isDarkTheme  
     ? "bg-custom-dark text-white border-custom-dark border-end-0" 
     : "bg-light text-secondary border-end-0";
   const baseInputClass = isDarkTheme 
@@ -330,7 +365,32 @@ export const SignupFormComponent = ({ accountCreationEnabled, onBackToLogin, isD
             id="termsCheck"
             label={
               <span className={`small ${textClass}`}>
-                I agree to the <a href="#" className={`text-decoration-underline fw-medium ${isDarkTheme ? 'text-white' : 'text-dark'}`}>Terms</a> and <a href="#" className={`text-decoration-underline fw-medium ${isDarkTheme ? 'text-white' : 'text-dark'}`}>Privacy Policy</a>.
+                I agree to the{' '}
+                <a
+                  href="#terms"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleOpenLegalModal('terms');
+                  }}
+                  className={`text-decoration-underline fw-medium ${isDarkTheme ? 'text-white' : 'text-dark'}`}
+                  style={{ cursor: 'pointer' }}
+                >
+                  Terms of Service
+                </a>{' '}
+                and{' '}
+                <a
+                  href="#privacy"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleOpenLegalModal('privacy');
+                  }}
+                  className={`text-decoration-underline fw-medium ${isDarkTheme ? 'text-white' : 'text-dark'}`}
+                  style={{ cursor: 'pointer' }}
+                >
+                  Privacy Policy
+                </a>.
               </span>
             }
             checked={termsAccepted}
@@ -354,6 +414,12 @@ export const SignupFormComponent = ({ accountCreationEnabled, onBackToLogin, isD
           </a>
         </div>
       </Form>
+
+      <LegalModal
+        show={showLegalModal}
+        onHide={handleCloseLegalModal}
+        initialType={legalModalType}
+      />
     </div>
   );
 };
