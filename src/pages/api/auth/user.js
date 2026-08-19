@@ -18,9 +18,10 @@ export default async function handler(req, res) {
         }
         res.status(200).json(data);
       } catch (error) {
+        console.error("Auth user GET error:", error);
         res.status(error.status || 500).json({
-          ...error,
-          message: error.message,
+          error: error.message || "An unexpected error occurred.",
+          message: error.message || "An unexpected error occurred.",
         });
       }
       break;
@@ -47,7 +48,11 @@ export default async function handler(req, res) {
 
         res.status(200).json(signInResponse.data);
       } catch (error) {
-        res.status(error.status || 500).json({ ...error, message: error.message });
+        console.error("Auth user POST error:", error);
+        res.status(error.status || 500).json({
+          error: error.message || "An unexpected error occurred.",
+          message: error.message || "An unexpected error occurred.",
+        });
       }
       break;
     case "DELETE":
@@ -58,9 +63,10 @@ export default async function handler(req, res) {
         }
         res.status(200).end(); // Sign-out successful, no content to return
       } catch (error) {
+        console.error("Auth user DELETE error:", error);
         res.status(error.status || 500).json({
-          ...error,
-          message: error.message,
+          error: error.message || "An unexpected error occurred.",
+          message: error.message || "An unexpected error occurred.",
         });
       }
       break;

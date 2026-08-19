@@ -23,13 +23,13 @@
 export function parseScheduleDirective(text, defaultTimezone = 'UTC') {
   if (!text || typeof text !== 'string') return null
 
-  // Match /schedule or /schedule: anywhere in text followed by datetime
+  // Match /schedule or /schedule: anywhere in text followed by directive value
   const match = text.match(/\/schedule(?::|\s)\s*([^\r\n]+)/i)
   if (!match) return null
 
   let rawDateStr = match[1].trim()
-  // Clean markdown formatting (bold, italic, backticks, html comments)
-  rawDateStr = rawDateStr.replaceAll(/[*_`]/g, '').replaceAll(/<!--|-->/g, '').trim()
+  // Clean markdown formatting (bold, italic, backticks)
+  rawDateStr = rawDateStr.replaceAll(/[*_`]/g, '').trim()
 
   if (!rawDateStr) return null
 

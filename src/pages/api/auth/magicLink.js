@@ -73,8 +73,9 @@ export default async function handler(req, res) {
 
     res.status(200).json({ message: "Magic link sent successfully." });
   } catch (error) {
+    console.error("Magic link error:", error);
     res.status(error.status || 500).json({
-      ...error,
+      error: error.message || "An unexpected error occurred.",
       message: error.message || "An unexpected error occurred.",
     });
   }
