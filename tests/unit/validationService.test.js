@@ -20,6 +20,13 @@ describe('validationService', () => {
       expect(sanitizeString(longString, 50)).toHaveLength(50)
     })
 
+    it('strips nested and malformed HTML tags completely', () => {
+      const nested = '<<script>script>alert("hack")<</script>/script> Math Class'
+      expect(sanitizeString(nested)).not.toContain('<')
+      expect(sanitizeString(nested)).not.toContain('>')
+      expect(sanitizeString(nested)).toBe('alert("hack") Math Class')
+    })
+
     it('handles null, undefined, or empty inputs cleanly', () => {
       expect(sanitizeString(null)).toBe('')
       expect(sanitizeString()).toBe('')

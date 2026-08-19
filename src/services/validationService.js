@@ -6,10 +6,17 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 /**
  * Strips HTML tags, trims surrounding whitespace, and truncates to maxLength.
+ * Multi-pass sanitization ensures nested tags and residual angle brackets are completely neutralized.
  */
 export function sanitizeString(str, maxLength = 255) {
   if (str === null || str === undefined) return ''
-  const cleaned = String(str).replaceAll(/<[^>]*>/g, '').trim()
+  let cleaned = String(str)
+  while (cleaned.includes('<') && cleaned.includes('>')) {
+    const prev = cleaned
+    cleaned = cleaned.replaceAll(/<[^<>]*>/g, '')
+    if (cleaned === prev) break
+  }
+  cleaned = cleaned.replaceAll(/[<>]/g, '').trim()
   return maxLength ? cleaned.slice(0, maxLength) : cleaned
 }
 

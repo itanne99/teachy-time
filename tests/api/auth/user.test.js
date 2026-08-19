@@ -68,4 +68,28 @@ describe('API Route: /api/auth/user', () => {
 
     expect(res._getStatusCode()).toBe(200)
   })
+
+  it('handles auth errors cleanly without exposing stack traces', async () => {
+    const mockSupabase = {
+      auth: {
+        signInWithPassword: vi.fn().mockResolvedValue({
+          data: null,
+          error: { message: 'Invalid login credentials', status: 400 },
+        }),
+      },
+    }
+    vi.mocked(createClient).mockReturnValue(mockSupabase)
+
+    const { req, res } = createApiRequest({
+      method: 'POST',
+      body: { user_email: 'teacher@school.edu', password: 'wrongpassword' },
+    })
+    await handler(req, res)
+
+    expect(res._getStatusCode()).toBe(400)
+    expect(res._getJSONData()).toEqual({
+      error: 'Invalid login credentials',
+      message: 'Invalid login credentials',
+    })
+  })
 })

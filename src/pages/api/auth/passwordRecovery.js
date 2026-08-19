@@ -43,9 +43,10 @@ export default async function handler(req, res) {
 
         res.status(200).json({ data, message: "Password reset email sent successfully." });
       } catch (error) {
+        console.error("Password recovery POST error:", error);
         res.status(error.status || 500).json({
-          ...error,
-          message: error.message,
+          error: error.message || "An unexpected error occurred.",
+          message: error.message || "An unexpected error occurred.",
         });
       }
       break;
@@ -72,9 +73,10 @@ export default async function handler(req, res) {
 
         res.status(200).json({ message: "Password updated successfully." });
       } catch (error) {
+        console.error("Password recovery PATCH error:", error);
         res.status(error.status || 500).json({
-          ...error,
-          message: error.message,
+          error: error.message || "An unexpected error occurred.",
+          message: error.message || "An unexpected error occurred.",
         });
       }
       break;
