@@ -6,7 +6,8 @@
       "type": "node-terminal",
       "request": "launch",
       "command": "yarn run dev",
-      "preLaunchTask": "supabase: start"
+      "preLaunchTask": "supabase: start",
+      "postDebugTask": "supabase: stop"
     },
     {
       "name": "Client (Chrome)",
@@ -41,6 +42,8 @@
       "skipFiles": [
         "<node_internals>/**"
       ],
+      "preLaunchTask": "supabase: start",
+      "postDebugTask": "supabase: stop",
       "serverReadyAction": {
         "action": "debugWithEdge",
         "killOnServerStop": true,
