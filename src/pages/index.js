@@ -9,6 +9,8 @@ import Link from "next/link";
 export default function App({ useStore }) {
   const user = useStore((state) => state.user);
   const alarms = useStore((state) => state.alarms);
+  const setAuthModalOpen = useStore((state) => state.setAuthModalOpen);
+  const setAuthModalView = useStore((state) => state.setAuthModalView);
   const currentDay = CommonUtils.getCurrentDay();
   const todayAlarms = alarms[currentDay] || [];
 
@@ -34,11 +36,17 @@ export default function App({ useStore }) {
               Teachy Time is the ultimate companion for educators. Manage your daily schedule with precision, visual countdowns, and effortless synchronization.
             </p>
             <div className="d-grid gap-3 d-sm-flex justify-content-sm-center">
-              <Link href="/Profile" passHref legacyBehavior>
-                <Button variant="primary" size="lg" className="px-5 py-3 fw-semibold">
-                  Get Started Free <ArrowRight className="ms-2" size={18} />
-                </Button>
-              </Link>
+              <Button 
+                variant="primary" 
+                size="lg" 
+                className="px-5 py-3 fw-semibold"
+                onClick={() => {
+                  setAuthModalView('signup');
+                  setAuthModalOpen(true);
+                }}
+              >
+                Get Started Free <ArrowRight className="ms-2" size={18} />
+              </Button>
             </div>
           </Col>
         </Row>

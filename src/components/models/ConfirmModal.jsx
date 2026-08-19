@@ -4,7 +4,7 @@ import { ExclamationTriangle } from 'react-bootstrap-icons';
 
 export const ConfirmModal = ({ show, onHide, onConfirm, title, message }) => {
   return (
-    <Modal show={show} onHide={onHide} centered>
+    <Modal show={show} onHide={onHide} centered enforceFocus={false}>
       <Modal.Header closeButton className="border-0 pb-0">
         <Modal.Title className="d-flex align-items-center gap-2 text-danger">
           <ExclamationTriangle size={22} />

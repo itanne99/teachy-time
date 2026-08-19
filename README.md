@@ -119,6 +119,14 @@ yarn db:push:local
 
 Open [http://localhost:54323](http://localhost:54323) in your browser.
 
+8. **Testing Auth Emails Locally:**
+
+Supabase intercepts all outbound emails locally using **Mailpit** to prevent spamming real users during development. You can view magic links, password resets, and email confirmations by opening the local email inbox:
+
+[http://localhost:54324](http://localhost:54324)
+
+> **Note:** The Supabase Studio "Authentication -> Providers" page is intentionally disabled locally. All auth providers (Google, Apple, etc.) must be configured directly in `supabase/config.toml`.
+
 ### Running the Development Server
 
 ```bash
