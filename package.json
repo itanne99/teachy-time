@@ -57,7 +57,7 @@
     "jsdom": "^30.0.1",
     "node-mocks-http": "^1.18.1",
     "supabase": "^2.114.0",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "vitest": "^4.1.11"
   }
 }
