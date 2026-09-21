@@ -145,6 +145,10 @@ export default function EditAlarms({ useStore }) {
   };
 
   const performCopy = async (fromDay, toDay) => {
+    if (!user?.id || !currentScheduleId) {
+      console.error("Missing user ID or current schedule ID");
+      return;
+    }
     setLoading(true);
     const alarmsToCopy = alarms[fromDay] || [];
     const toDayIndex = daysOfWeek.indexOf(toDay);

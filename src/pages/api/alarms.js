@@ -22,7 +22,7 @@ export default async function handler(req, res) {
 
     if (alarmIdentifier.id) {
       queryBuilder = queryBuilder.eq('id', alarmIdentifier.id);
-    } else if (alarmIdentifier.day_of_week && alarmIdentifier.start_time && alarmIdentifier.end_time && schedule_id) { // Updated condition to use start_time and end_time
+    } else if ((alarmIdentifier.day_of_week !== undefined && alarmIdentifier.day_of_week !== null) && alarmIdentifier.start_time && alarmIdentifier.end_time && schedule_id) { // Updated condition to use start_time and end_time
       queryBuilder = queryBuilder
         .eq('day_of_week', alarmIdentifier.day_of_week)
         .eq('start_time', alarmIdentifier.start_time) // Use start_time
@@ -265,7 +265,7 @@ export default async function handler(req, res) {
     case 'DELETE':
       // Delete an alarm or all alarms for a day
       try {
-        const { id, user_id, day_of_week } = body;
+        const { id, user_id, day_of_week, schedule_id } = body;
         
         if (id) {
           const { data: alarmToDelete, error: alarmToDeleteError } = await checkExistingAlarm({ id });
@@ -294,11 +294,12 @@ export default async function handler(req, res) {
           return;
         } 
         
-        if (user_id && day_of_week !== undefined) {
+        if (user_id && schedule_id && day_of_week !== undefined) {
           const { error } = await supabase
             .from('alarms')
             .delete()
             .eq('user_id', user_id)
+            .eq('schedule_id', schedule_id)
             .eq('day_of_week', day_of_week);
 
           if (error) {
@@ -310,7 +311,7 @@ export default async function handler(req, res) {
           return;
         }
 
-        res.status(400).json({ error: 'Timer ID or User ID and Day of Week are required.' });
+        res.status(400).json({ error: 'Timer ID or User ID, Schedule ID, and Day of Week are required.' });
       } catch (error) {
         res.status(500).json({ error: 'An unexpected error occurred.', details: error.message });
       }
