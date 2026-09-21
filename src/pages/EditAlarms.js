@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react"
 import { Container, Row, Col, Button, Table, Card, Badge, Modal, Form } from "react-bootstrap"
-import { useTable, createCoreRowModel, createSortedRowModel, rowSortingFeature, sortFn_datetime } from "@tanstack/react-table"
+import { useTable, tableFeatures, createSortedRowModel, rowSortingFeature, sortFn_datetime } from "@tanstack/react-table"
 import CommonUtils from "@/services/CommonUtils"
 import { AlterAlarm } from "@/components/models/AlterAlarm"
 import { ConfirmModal } from "@/components/models/ConfirmModal"
@@ -127,7 +127,7 @@ export default function EditAlarms() {
             [activeDay]: [...alarms[activeDay], data],
           });
         }
-        table.setSorting([{ id: "start_time", desc: false }]);
+        setSorting([{ id: "start_time", desc: false }]);
         setShowModal(false);
         setEditingAlarm(null);
       } else {
@@ -348,17 +348,16 @@ export default function EditAlarms() {
     [alarms, activeDay, setAlarms, userSounds, warningLeadMinutes]
   );
 
+  const features = useMemo(() => tableFeatures({
+    rowSortingFeature,
+    sortedRowModel: createSortedRowModel(),
+    sortFns: { datetime: sortFn_datetime },
+  }), []);
+
   const table = useTable({
-    _features: [rowSortingFeature],
+    features,
     data: alarms[activeDay] || [],
     columns,
-    _rowModels: {
-      core: createCoreRowModel(),
-      sorted: createSortedRowModel(),
-    },
-    sortFns: {
-      datetime: sortFn_datetime,
-    },
     onSortingChange: setSorting,
     state: {
       sorting,
@@ -464,7 +463,7 @@ export default function EditAlarms() {
             <tbody>
               {table.getRowModel().rows.map((row) => (
                 <tr key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
+                  {row.getAllCells().map((cell) => (
                     <td key={cell.id} className={cell.column.id === "actions" ? "text-end" : ""}>
                       {cell.column.columnDef.cell instanceof Function ? cell.column.columnDef.cell({ row }) : cell.getValue()}
                     </td>

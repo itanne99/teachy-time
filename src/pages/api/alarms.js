@@ -321,7 +321,7 @@ export default async function handler(req, res) {
 
     case 'DELETE':
       try {
-        const { id, user_id, day_of_week, schedule_id } = body;
+        const { id, day_of_week, schedule_id } = body;
 
         if (id !== undefined) {
           if (!validatePositiveInt(id)) {
@@ -360,9 +360,9 @@ export default async function handler(req, res) {
           return;
         }
 
-        if (user_id && schedule_id && day_of_week !== undefined) {
-          if (!validateDayOfWeek(day_of_week) || !validatePositiveInt(schedule_id) || !validatePositiveInt(user_id)) {
-            res.status(400).json({ error: 'Valid day_of_week, positive integer user_id, and positive integer schedule_id are required.' });
+        if (schedule_id && day_of_week !== undefined) {
+          if (!validateDayOfWeek(day_of_week) || !validatePositiveInt(schedule_id)) {
+            res.status(400).json({ error: 'Valid day_of_week and positive integer schedule_id are required.' });
             return;
           }
 
