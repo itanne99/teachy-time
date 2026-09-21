@@ -3,7 +3,7 @@ import { applyRateLimit } from "@/services/rateLimitService";
 import { validateEmail } from "@/services/validationService";
 
 export default async function handler(req, res) {
-  if (!applyRateLimit(req, res, { limit: 10, windowMs: 60_000 })) return;
+  if (!(await applyRateLimit(req, res, { limit: 10, windowMs: 60_000 }))) return;
 
   const { method, body } = req;
 
@@ -12,7 +12,7 @@ export default async function handler(req, res) {
   switch (method) {
     case "GET":
       try {
-        const { data, error } = await supabase.auth.getSession();
+        const { data, error } = await supabase.auth.getUser();
         if (error) {
           throw error;
         }

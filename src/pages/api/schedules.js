@@ -3,8 +3,7 @@ import { getAppConfig } from "@/services/configService"
 import { applyRateLimit } from "@/services/rateLimitService"
 import { sanitizeString, validatePositiveInt } from "@/services/validationService"
 
-async function getAuthUserId(req, res) {
-  const supabase = createClient(req, res);
+async function getAuthUserId(supabase) {
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) {
     return { userId: null, error: 'Unauthorized' };
@@ -13,12 +12,12 @@ async function getAuthUserId(req, res) {
 }
 
 export default async function handler(req, res) {
-  if (!applyRateLimit(req, res, { limit: 100, windowMs: 60_000 })) return;
+  if (!(await applyRateLimit(req, res, { limit: 100, windowMs: 60_000 }))) return;
 
   const { method, body } = req;
   const supabase = createClient(req, res);
 
-  const { userId, error: authError } = await getAuthUserId(req, res);
+  const { userId, error: authError } = await getAuthUserId(supabase);
   if (authError) {
     res.status(401).json({ error: 'Unauthorized' });
     return;

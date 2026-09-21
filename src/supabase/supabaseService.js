@@ -4,7 +4,7 @@ let supabaseServiceInstance = null
 let lastUsedKey = null
 
 function getClient() {
-  const currentKey = process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY
+  const currentKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   if (!supabaseServiceInstance || lastUsedKey !== currentKey) {
     supabaseServiceInstance = createClient(supabaseUrl, currentKey)

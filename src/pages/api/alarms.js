@@ -4,8 +4,7 @@ import { getAppConfig } from '@/services/configService'
 import { applyRateLimit } from '@/services/rateLimitService'
 import { sanitizeString, validateTime, validateDayOfWeek, validatePositiveInt } from '@/services/validationService'
 
-async function getAuthUserId(req, res) {
-  const supabase = createClient(req, res)
+async function getAuthUserId(supabase) {
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error || !user) {
     return { userId: null, error: 'Unauthorized' }
@@ -14,13 +13,13 @@ async function getAuthUserId(req, res) {
 }
 
 export default async function handler(req, res) {
-  if (!applyRateLimit(req, res, { limit: 100, windowMs: 60_000 })) return;
+  if (!(await applyRateLimit(req, res, { limit: 100, windowMs: 60_000 }))) return;
 
   const { method, body } = req
 
   const supabase = createClient(req, res);
 
-  const { userId, error: authError } = await getAuthUserId(req, res);
+  const { userId, error: authError } = await getAuthUserId(supabase);
   if (authError) {
     res.status(401).json({ error: 'Unauthorized' });
     return;
@@ -72,49 +71,56 @@ export default async function handler(req, res) {
   };
 
   switch (method) {
-    case 'POST':
+    case 'GET':
       try {
-        const { schedule_id } = body;
+        const { schedule_id } = req.query;
 
         if (!validatePositiveInt(schedule_id)) {
           res.status(400).json({ error: 'Schedule ID is required and must be a valid positive integer.' });
           return;
         }
 
-        let queryBuilder = supabase.from('alarms').select('id, label, day_of_week, start_time, end_time, user_id, schedule_id, play_sound, sound_id, play_warning_sound, warning_sound_id, alarm_sounds!left(storage_url)');
+        let queryBuilder = supabase.from('alarms').select('id, label, day_of_week, start_time, end_time, user_id, schedule_id, play_sound, sound_id, play_warning_sound, warning_sound_id');
 
         queryBuilder = queryBuilder.eq('user_id', userId).eq('schedule_id', schedule_id);
 
-        const { data, error } = await queryBuilder.order('start_time', { ascending: true }); // Order by start_time
+        const [{ data: alarmsData, error: alarmsError }, { data: soundsData }] = await Promise.all([
+          queryBuilder.order('start_time', { ascending: true }),
+          supabase.from('alarm_sounds').select('id, storage_url').eq('user_id', userId)
+        ]);
 
-        if (data) {
-          const transformedData = {}
-          DAYS_OF_WEEK.forEach(day => {
-            transformedData[day] = []
-          })
+        if (alarmsError) {
+          console.error('Supabase error:', alarmsError);
+          res.status(500).json({ error: alarmsError.message });
+          return;
+        }
 
-          data.forEach(alarm => {
+        const soundsMap = {};
+        if (soundsData) {
+          soundsData.forEach(s => {
+            soundsMap[s.id] = s.storage_url;
+          });
+        }
+
+        const transformedData = {}
+        DAYS_OF_WEEK.forEach(day => {
+          transformedData[day] = []
+        })
+
+        if (alarmsData) {
+          alarmsData.forEach(alarm => {
             const dayName = DAYS_OF_WEEK[alarm.day_of_week]
             if (dayName) {
               transformedData[dayName].push({
                 ...alarm,
-                sound_url: alarm.alarm_sounds?.storage_url || null,
-                warning_sound_url: null,
-                alarm_sounds: undefined,
+                sound_url: alarm.sound_id ? (soundsMap[alarm.sound_id] || null) : null,
+                warning_sound_url: alarm.warning_sound_id ? (soundsMap[alarm.warning_sound_id] || null) : null,
               })
             }
           })
-          res.status(200).json(transformedData);
-          return;
         }
 
-        if (error) {
-          console.error('Supabase error:', error);
-          res.status(500).json({ error: error.message });
-          return;
-        }
-
-        res.status(200).json(data);
+        res.status(200).json(transformedData);
       } catch (error) {
         res.status(500).json({ error: 'An unexpected error occurred.', details: error.message });
       }
@@ -383,7 +389,7 @@ export default async function handler(req, res) {
       break;
 
     default:
-      res.setHeader('Allow', ['POST', 'PUT', 'PATCH', 'DELETE']);
+      res.setHeader('Allow', ['GET', 'PUT', 'PATCH', 'DELETE']);
       res.status(405).end(`Method ${method} Not Allowed`);
   }
 }

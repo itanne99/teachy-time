@@ -169,10 +169,8 @@ export default function App({ Component, pageProps }) {
     const fetchAlarms = async () => {
       if (session?.user?.id && currentScheduleId) {
         try {
-          const response = await fetch(API_ENDPOINTS.ALARMS, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: session.user.id, schedule_id: currentScheduleId }),
+          const response = await fetch(`${API_ENDPOINTS.ALARMS}?schedule_id=${currentScheduleId}`, {
+            method: 'GET',
           });
           const data = await response.json();
           if (response.ok) {

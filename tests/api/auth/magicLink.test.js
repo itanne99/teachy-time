@@ -31,7 +31,7 @@ describe('API Route: /api/auth/magicLink', () => {
     const mockSupabase = {
       from: vi.fn().mockReturnValue({
         select: vi.fn().mockResolvedValue({
-          data: [{ key: 'blocked_magic_link_domains', value: '["@tempmail.com"]' }],
+          data: [{ key: 'blocked_magic_link_domains', value: '["tempmail.com"]' }],
           error: null,
         }),
       }),

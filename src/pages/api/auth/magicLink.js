@@ -4,7 +4,7 @@ import { applyRateLimit } from "@/services/rateLimitService";
 import { validateEmail } from "@/services/validationService";
 
 export default async function handler(req, res) {
-  if (!applyRateLimit(req, res, { limit: 10, windowMs: 60_000 })) return;
+  if (!(await applyRateLimit(req, res, { limit: 10, windowMs: 60_000 }))) return;
 
   const { method, body } = req;
 
@@ -16,16 +16,17 @@ export default async function handler(req, res) {
   const supabase = createClient(req, res);
 
   const getURL = () => {
-    let url =
-      process?.env?.NEXT_PUBLIC_SITE_URL ?? // Set this to your site URL in production env.
-      process?.env?.NEXT_PUBLIC_VERCEL_URL ?? // Automatically set by Vercel.
-      'http://localhost:3000/'
-
-    // Make sure to include `https://` when not localhost.
-    url = url.startsWith('http') ? url : `https://${url}`
-    // Make sure to include a trailing `/`.
-    url = url.endsWith('/') ? url : `${url}/`
-    return url
+    let url = process?.env?.NEXT_PUBLIC_SITE_URL;
+    if (!url && process?.env?.NEXT_PUBLIC_VERCEL_URL && !process.env.NEXT_PUBLIC_VERCEL_URL.includes('localhost')) {
+      url = process.env.NEXT_PUBLIC_VERCEL_URL;
+    }
+    if (!url) {
+      const protocol = req.headers['x-forwarded-proto'] || (req.headers.host?.includes('localhost') || req.headers.host?.includes('127.0.0.1') ? 'http' : 'https');
+      url = `${protocol}://${req.headers.host}/`;
+    }
+    url = url.startsWith('http') ? url : `https://${url}`;
+    url = url.endsWith('/') ? url : `${url}/`;
+    return url;
   }
 
   try {
@@ -53,17 +54,20 @@ export default async function handler(req, res) {
       console.error("Failed to parse allowed domains", e);
     }
 
-    const emailDomain = email.slice(email.lastIndexOf("@"));
+    const emailDomain = email.slice(email.lastIndexOf("@") + 1).toLowerCase();
     
     // If we have a blocked list, enforce it
     if (blockedDomains && blockedDomains.includes(emailDomain)) {
       return res.status(403).json({ error: "Email domain not allowed for magic link login." });
     }
 
+    const redirectUrl = getURL() + 'api/auth/callback';
+    console.log('[Auth] Requesting magic link for:', email, 'with redirect:', redirectUrl);
+
     const { error } = await supabase.auth.signInWithOtp({ 
       email: email.trim().toLowerCase(),
       options: {
-        emailRedirectTo: getURL(),
+        emailRedirectTo: redirectUrl,
       }
     });
 

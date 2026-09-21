@@ -1,7 +1,10 @@
 import createClient from '@/supabase/api'
 import { getAppConfig } from '@/services/configService'
+import { applyRateLimit } from '@/services/rateLimitService'
 
 export default async function handler(req, res) {
+  if (!(await applyRateLimit(req, res, { limit: 100, windowMs: 60_000 }))) return;
+
   const { method } = req
   if (method !== 'GET') {
     res.setHeader('Allow', ['GET'])
@@ -11,6 +14,10 @@ export default async function handler(req, res) {
   try {
     const supabase = createClient(req, res)
     const config = await getAppConfig(supabase)
+    
+    // Omit sensitive server-side fields
+    delete config.blocked_magic_link_domains;
+
     return res.status(200).json(config)
   } catch (error) {
     console.error('GET /api/config error:', error)
