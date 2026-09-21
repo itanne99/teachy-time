@@ -16,9 +16,9 @@ export default async function handler(req, res) {
     const config = await getAppConfig(supabase)
     
     // Omit sensitive server-side fields
-    const { blocked_magic_link_domains, ...clientConfig } = config;
+    delete config.blocked_magic_link_domains;
 
-    return res.status(200).json(clientConfig)
+    return res.status(200).json(config)
   } catch (error) {
     console.error('GET /api/config error:', error)
     return res.status(500).json({ error: error.message })

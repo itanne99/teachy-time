@@ -38,7 +38,8 @@ describe('rateLimitService', () => {
     for (let i = 0; i < 2; i++) {
       await checkRateLimit(ip, { limit: 2, windowMs: 1000 })
     }
-    expect((await checkRateLimit(ip, { limit: 2, windowMs: 1000 })).isAllowed).toBe(false)
+    const rateLimitResult = await checkRateLimit(ip, { limit: 2, windowMs: 1000 })
+    expect(rateLimitResult.isAllowed).toBe(false)
 
     // Advance 1.1s past the window
     vi.advanceTimersByTime(1100)

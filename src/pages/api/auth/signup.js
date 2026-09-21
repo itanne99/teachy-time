@@ -15,6 +15,20 @@ export default async function handler(req, res) {
 
   const supabase = createClient(req, res);
 
+  const getURL = () => {
+    let url = process?.env?.NEXT_PUBLIC_SITE_URL;
+    if (!url && process?.env?.NEXT_PUBLIC_VERCEL_URL && !process.env.NEXT_PUBLIC_VERCEL_URL.includes('localhost')) {
+      url = process.env.NEXT_PUBLIC_VERCEL_URL;
+    }
+    if (!url) {
+      const protocol = req.headers['x-forwarded-proto'] || (req.headers.host?.includes('localhost') || req.headers.host?.includes('127.0.0.1') ? 'http' : 'https');
+      url = `${protocol}://${req.headers.host}/`;
+    }
+    url = url.startsWith('http') ? url : `https://${url}`;
+    url = url.endsWith('/') ? url : `${url}/`;
+    return url;
+  }
+
   try {
     const config = await getAppConfig(supabase);
     if (config.Account_Creation === false) {
@@ -44,6 +58,7 @@ export default async function handler(req, res) {
       email: email.trim().toLowerCase(),
       password,
       options: {
+        emailRedirectTo: getURL() + 'api/auth/callback',
         data: {
           full_name: sanitizedFullName,
         }
