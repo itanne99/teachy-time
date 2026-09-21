@@ -13,10 +13,10 @@ describe('API Route: /api/auth/user', () => {
   })
 
   it('returns active session data on GET', async () => {
-    const mockSession = { user: { id: 'u-123', email: 'teacher@school.edu' } }
+    const mockUser = { id: 'u-123', email: 'teacher@school.edu' }
     const mockSupabase = {
       auth: {
-        getSession: vi.fn().mockResolvedValue({ data: { session: mockSession }, error: null }),
+        getUser: vi.fn().mockResolvedValue({ data: { user: mockUser }, error: null }),
       },
     }
     vi.mocked(createClient).mockReturnValue(mockSupabase)
@@ -25,7 +25,7 @@ describe('API Route: /api/auth/user', () => {
     await handler(req, res)
 
     expect(res._getStatusCode()).toBe(200)
-    expect(res._getJSONData()).toEqual({ session: mockSession })
+    expect(res._getJSONData()).toEqual({ user: mockUser })
   })
 
   it('returns 400 when missing credentials on POST', async () => {

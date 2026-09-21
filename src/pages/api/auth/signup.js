@@ -4,7 +4,7 @@ import { applyRateLimit } from "@/services/rateLimitService";
 import { sanitizeString, validateEmail } from "@/services/validationService";
 
 export default async function handler(req, res) {
-  if (!applyRateLimit(req, res, { limit: 10, windowMs: 60_000 })) return;
+  if (!(await applyRateLimit(req, res, { limit: 10, windowMs: 60_000 }))) return;
 
   const { method, body } = req;
 

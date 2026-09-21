@@ -37,20 +37,20 @@ export async function proxy(request) {
     }
   )
 
-  // Refresh session if expired
+  // Validate token instead of just checking cookies
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+  } = await supabase.auth.getUser()
 
   console.log(`[Middleware] Path: ${pathname}`)
   console.log(`[Middleware] Cookies count: ${request.cookies.getAll().length}`)
-  console.log(`[Middleware] Session found: ${!!session}`)
+  console.log(`[Middleware] User found: ${!!user}`)
 
   const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route))
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route))
 
   // Redirect to login if accessing protected route without session
-  if (isProtectedRoute && !session) {
+  if (isProtectedRoute && !user) {
     console.log(`[Middleware] Redirecting to / due to missing session for protected route: ${pathname}`)
     const url = request.nextUrl.clone()
     url.pathname = '/'
@@ -60,7 +60,7 @@ export async function proxy(request) {
   }
 
   // Redirect to profile if accessing auth routes while logged in
-  if (isAuthRoute && session) {
+  if (isAuthRoute && user) {
     console.log(`[Middleware] Redirecting to /Profile because user is already authenticated`)
     const url = request.nextUrl.clone()
     url.pathname = '/Profile'

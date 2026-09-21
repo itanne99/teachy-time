@@ -29,7 +29,7 @@ describe('API Route: /api/alarms', () => {
     expect(res._getJSONData()).toEqual({ error: 'Unauthorized' })
   })
 
-  it('returns 400 when schedule_id is missing or invalid in POST', async () => {
+  it('returns 400 when schedule_id is missing or invalid in GET', async () => {
     mockSupabase = {
       auth: {
         getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'u-123' } }, error: null }),
@@ -37,14 +37,14 @@ describe('API Route: /api/alarms', () => {
     }
     vi.mocked(createClient).mockReturnValue(mockSupabase)
 
-    const { req, res } = createApiRequest({ method: 'POST', body: {} })
+    const { req, res } = createApiRequest({ method: 'GET', query: {} })
     await handler(req, res)
 
     expect(res._getStatusCode()).toBe(400)
     expect(res._getJSONData().error).toMatch(/Schedule ID/i)
   })
 
-  it('returns formatted alarms grouped by day of week on POST with schedule_id', async () => {
+  it('returns formatted alarms grouped by day of week on GET with schedule_id', async () => {
     const rawAlarms = [
       {
         id: 1,
@@ -58,7 +58,6 @@ describe('API Route: /api/alarms', () => {
         sound_id: 'snd-1',
         play_warning_sound: false,
         warning_sound_id: null,
-        alarm_sounds: { storage_url: 'https://example.com/sound.mp3' },
       },
     ]
 
@@ -68,15 +67,23 @@ describe('API Route: /api/alarms', () => {
       order: vi.fn().mockResolvedValue({ data: rawAlarms, error: null }),
     }
 
+    const soundsQueryBuilder = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockResolvedValue({ data: [{ id: 'snd-1', storage_url: 'https://example.com/sound.mp3' }], error: null }),
+    }
+
     mockSupabase = {
       auth: {
         getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'u-123' } }, error: null }),
       },
-      from: vi.fn().mockReturnValue(queryBuilder),
+      from: vi.fn().mockImplementation((table) => {
+        if (table === 'alarms') return queryBuilder;
+        if (table === 'alarm_sounds') return soundsQueryBuilder;
+      }),
     }
     vi.mocked(createClient).mockReturnValue(mockSupabase)
 
-    const { req, res } = createApiRequest({ method: 'POST', body: { schedule_id: 1 } })
+    const { req, res } = createApiRequest({ method: 'GET', query: { schedule_id: '1' } })
     await handler(req, res)
 
     expect(res._getStatusCode()).toBe(200)

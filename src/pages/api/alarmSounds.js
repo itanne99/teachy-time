@@ -6,8 +6,7 @@ import { sanitizeString, validatePositiveInt } from "@/services/validationServic
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
-async function getAuthUserId(req, res) {
-  const supabase = createClient(req, res);
+async function getAuthUserId(supabase) {
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) {
     return { userId: null, error: "Unauthorized" };
@@ -16,12 +15,12 @@ async function getAuthUserId(req, res) {
 }
 
 export default async function handler(req, res) {
-  if (!applyRateLimit(req, res, { limit: 100, windowMs: 60_000 })) return;
+  if (!(await applyRateLimit(req, res, { limit: 100, windowMs: 60_000 }))) return;
 
   const { method, query, body } = req;
   const supabase = createClient(req, res);
 
-  const { userId, error: authError } = await getAuthUserId(req, res);
+  const { userId, error: authError } = await getAuthUserId(supabase);
   if (authError) {
     return res.status(401).json({ error: "Unauthorized" });
   }
@@ -152,7 +151,8 @@ export default async function handler(req, res) {
         const { data: affectedAlarms, error: alarmsError } = await supabase
           .from("alarms")
           .select("id")
-          .eq("sound_id", id);
+          .eq("sound_id", id)
+          .eq("user_id", userId);
 
         if (alarmsError) throw alarmsError;
 
@@ -168,10 +168,6 @@ export default async function handler(req, res) {
           .eq("default_sound_id", id)
           .eq("user_id", userId);
 
-        await supabaseService.storage
-          .from("chimes")
-          .remove([sound.file_path]);
-
         const { error: deleteError } = await supabase
           .from("alarm_sounds")
           .delete()
@@ -179,6 +175,10 @@ export default async function handler(req, res) {
           .eq("user_id", userId);
 
         if (deleteError) throw deleteError;
+
+        await supabaseService.storage
+          .from("chimes")
+          .remove([sound.file_path]);
 
         return res.status(200).json({ deletedId: id, affectedAlarms: affectedAlarms?.length || 0 });
       } catch (error) {

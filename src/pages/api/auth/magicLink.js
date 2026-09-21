@@ -4,7 +4,7 @@ import { applyRateLimit } from "@/services/rateLimitService";
 import { validateEmail } from "@/services/validationService";
 
 export default async function handler(req, res) {
-  if (!applyRateLimit(req, res, { limit: 10, windowMs: 60_000 })) return;
+  if (!(await applyRateLimit(req, res, { limit: 10, windowMs: 60_000 }))) return;
 
   const { method, body } = req;
 
@@ -53,7 +53,7 @@ export default async function handler(req, res) {
       console.error("Failed to parse allowed domains", e);
     }
 
-    const emailDomain = email.slice(email.lastIndexOf("@"));
+    const emailDomain = email.slice(email.lastIndexOf("@") + 1).toLowerCase();
     
     // If we have a blocked list, enforce it
     if (blockedDomains && blockedDomains.includes(emailDomain)) {

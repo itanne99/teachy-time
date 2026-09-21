@@ -3,7 +3,7 @@ import { applyRateLimit } from "@/services/rateLimitService";
 import { sanitizeString, validateUUID } from "@/services/validationService";
 
 export default async function handler(req, res) {
-  if (!applyRateLimit(req, res, { limit: 100, windowMs: 60_000 })) return;
+  if (!(await applyRateLimit(req, res, { limit: 100, windowMs: 60_000 }))) return;
 
   const { method } = req;
 
@@ -68,8 +68,8 @@ export default async function handler(req, res) {
       try {
         const { first_name, last_name, user_id, default_sound_id, default_preset_sound_id, warning_lead_minutes, warning_chime_id } = req.body;
 
-        if (!first_name && !last_name && !user_id && default_sound_id === undefined && default_preset_sound_id === undefined && warning_lead_minutes === undefined && warning_chime_id === undefined) {
-          return res.status(400).json({ error: "All fields are required. first_name, last_name, user_id, default_sound_id, default_preset_sound_id, warning_lead_minutes, or warning_chime_id" });
+        if (first_name === undefined && last_name === undefined && user_id === undefined && default_sound_id === undefined && default_preset_sound_id === undefined && warning_lead_minutes === undefined && warning_chime_id === undefined) {
+          return res.status(400).json({ error: "At least one field to update is required." });
         }
 
         const targetUserId = user_id || user.id;
@@ -125,18 +125,21 @@ async function getUserProfile(supabase, userId) {
 }
 
 async function updateUserProfile(supabase, userId, updates) {
+  const updatePayload = {
+    updated_by: userId,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (updates.first_name !== undefined) updatePayload.first_name = updates.first_name;
+  if (updates.last_name !== undefined) updatePayload.last_name = updates.last_name;
+  if (updates.default_sound_id !== undefined) updatePayload.default_sound_id = updates.default_sound_id;
+  if (updates.default_preset_sound_id !== undefined) updatePayload.default_preset_sound_id = updates.default_preset_sound_id;
+  if (updates.warning_lead_minutes !== undefined) updatePayload.warning_lead_minutes = updates.warning_lead_minutes;
+  if (updates.warning_chime_id !== undefined) updatePayload.warning_chime_id = updates.warning_chime_id;
+
   const { data: user, error } = await supabase
     .from("profile")
-    .update({
-      first_name: updates.first_name,
-      last_name: updates.last_name,
-      default_sound_id: updates.default_sound_id,
-      default_preset_sound_id: updates.default_preset_sound_id,
-      warning_lead_minutes: updates.warning_lead_minutes,
-      warning_chime_id: updates.warning_chime_id,
-      updated_by: userId,
-      updated_at: new Date().toISOString(),
-    })
+    .update(updatePayload)
     .eq("user_id", updates.user_id)
     .select()
     .single();

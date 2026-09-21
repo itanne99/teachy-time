@@ -1,3 +1,15 @@
+import { Redis } from '@upstash/redis'
+
+const hasRedis = !!process.env.REDIS_STORAGE_KV_REST_API_URL && !!process.env.REDIS_STORAGE_KV_REST_API_TOKEN
+
+let redis = null
+if (hasRedis) {
+  redis = new Redis({
+    url: process.env.REDIS_STORAGE_KV_REST_API_URL,
+    token: process.env.REDIS_STORAGE_KV_REST_API_TOKEN,
+  })
+}
+
 const rateLimitStore = new Map()
 
 /**
@@ -13,54 +25,66 @@ export function getClientIp(req) {
 }
 
 /**
- * Evaluates rate limit against in-memory sliding window store.
+ * Evaluates rate limit using fixed window algorithm with Redis (or fallback to memory).
  */
-export function checkRateLimit(identifier, { limit = 100, windowMs = 60_000 } = {}) {
+export async function checkRateLimit(identifier, { limit = 100, windowMs = 60_000 } = {}) {
   const now = Date.now()
-  const record = rateLimitStore.get(identifier)
+  const windowId = Math.floor(now / windowMs)
+  const key = `ratelimit:${identifier}:${windowId}`
+  const resetTimeMs = (windowId + 1) * windowMs
 
-  if (record && now < record.resetTimeMs) {
+  if (redis) {
+    try {
+      const p = redis.pipeline()
+      p.incr(key)
+      p.pexpire(key, windowMs)
+      const results = await p.exec()
+      const count = results[0]
+
+      if (count > limit) {
+        return { isAllowed: false, remaining: 0, resetTimeMs }
+      }
+      return { isAllowed: true, remaining: limit - count, resetTimeMs }
+    } catch (error) {
+      console.error('Redis rate limit error:', error)
+      // fallback to allow if Redis fails
+      return { isAllowed: true, remaining: limit - 1, resetTimeMs }
+    }
+  }
+
+  // Fallback to in-memory map
+  const record = rateLimitStore.get(key)
+  if (record) {
     record.count += 1
     if (record.count > limit) {
-      return {
-        isAllowed: false,
-        remaining: 0,
-        resetTimeMs: record.resetTimeMs,
-      }
+      return { isAllowed: false, remaining: 0, resetTimeMs }
     }
-    return {
-      isAllowed: true,
-      remaining: limit - record.count,
-      resetTimeMs: record.resetTimeMs,
-    }
+    return { isAllowed: true, remaining: limit - record.count, resetTimeMs }
   }
 
-  const resetTimeMs = now + windowMs
-  rateLimitStore.set(identifier, { count: 1, resetTimeMs })
+  rateLimitStore.set(key, { count: 1 })
 
-  // Clean up any stale entries periodically
+  // Clean up stale memory map entries
   if (rateLimitStore.size > 10_000) {
-    for (const [key, value] of rateLimitStore.entries()) {
-      if (now >= value.resetTimeMs) {
-        rateLimitStore.delete(key)
+    const threshold = windowId - 1
+    for (const [k] of rateLimitStore.entries()) {
+      const keyWindow = parseInt(k.split(':').pop())
+      if (keyWindow < threshold) {
+        rateLimitStore.delete(k)
       }
     }
   }
 
-  return {
-    isAllowed: true,
-    remaining: limit - 1,
-    resetTimeMs,
-  }
+  return { isAllowed: true, remaining: limit - 1, resetTimeMs }
 }
 
 /**
  * Express/Next.js API route middleware helper.
  * Returns true if request is within limits, false (and sends 429) if exceeded.
  */
-export function applyRateLimit(req, res, { limit = 100, windowMs = 60_000 } = {}) {
+export async function applyRateLimit(req, res, { limit = 100, windowMs = 60_000 } = {}) {
   const ip = getClientIp(req)
-  const result = checkRateLimit(ip, { limit, windowMs })
+  const result = await checkRateLimit(ip, { limit, windowMs })
 
   if (res && typeof res.setHeader === 'function') {
     res.setHeader('X-RateLimit-Limit', limit)
@@ -88,3 +112,4 @@ export function applyRateLimit(req, res, { limit = 100, windowMs = 60_000 } = {}
 export function resetRateLimits() {
   rateLimitStore.clear()
 }
+
