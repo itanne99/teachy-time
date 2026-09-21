@@ -1,0 +1,45 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": ["superpowers@git+https://github.com/obra/superpowers.git"],
+  "instructions": [
+    "./AGENTS.md"
+  ],
+  "watcher": {
+    "ignore": [
+      "node_modules/**",
+      "dist/**",
+      ".git/**"
+    ]
+  },
+  "mcp": {
+    "stitch": {
+      "type": "remote",
+      "url": "https://stitch.googleapis.com/mcp",
+      "enabled": true,
+      "headers": {
+        "X-Goog-Api-Key": "YOUR_GOOGLE_API_KEY_HERE"
+      }
+    },
+    "gitnexus": {
+      "type": "local",
+      "command": [
+        "gitnexus",
+        "mcp"
+      ]
+    },
+    "github": {
+      "type": "remote",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "enabled": true,
+      "oauth": false,
+      "headers": {
+        "Authorization": "Bearer YOUR_GITHUB_PAT_HERE"
+      }
+    },
+    "supabase": {
+      "type": "remote",
+      "url": "https://mcp.supabase.com/mcp?project_ref=<project_id>",
+      "enabled": true
+    }
+  }
+}

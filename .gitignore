@@ -31,7 +31,7 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
-.env*
+.env
 
 # vercel
 .vercel
@@ -43,3 +43,24 @@ next-env.d.ts
 # reslilio sync
 *.sync
 *.rsls
+
+# IDE
+.idea/
+.vscode/*-debug-profile/
+
+# OS
+Thumbs.db
+
+# opencode (contains secrets)
+opencode.json
+.opencode/
+
+# claude
+.claude/
+
+# Added by ggshield
+.cache_ggshield
+
+# AI
+docs/
+.agents/

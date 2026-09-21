@@ -1,0 +1,41 @@
+name: Scheduled PR Merge to Main
+
+on:
+  schedule:
+    # Runs every 15 minutes
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run mode (logs actions without merging)'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  scheduled-merge:
+    name: Check and Merge Scheduled PRs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Execute Scheduled PR Merge
+        run: node .github/scripts/scheduled-merge.js
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          ALLOWED_BRANCHES: 'main,master'
+          MERGE_METHOD: 'squash'
+          DRY_RUN: ${{ inputs.dry_run || 'false' }}

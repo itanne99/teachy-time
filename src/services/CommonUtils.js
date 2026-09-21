@@ -16,6 +16,10 @@ class CommonUtils {
   static getCurrentDay() {
     return new Date().toLocaleDateString('en-US', { weekday: 'long' });
   }
+
+  static isNullOrWhitespace(str) {
+    return !str || str.trim().length === 0;
+  }
 }
 
 export default CommonUtils;

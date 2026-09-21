@@ -1,20 +1,30 @@
-import createClient from "@/supabase/api";
-import supabaseService from "@/supabase/supabaseService";
+import createClient from '@/supabase/api'
+import { DAYS_OF_WEEK } from '@/config/constants'
+import { getAppConfig } from '@/services/configService'
+import { applyRateLimit } from '@/services/rateLimitService'
+import { sanitizeString, validateTime, validateDayOfWeek, validatePositiveInt } from '@/services/validationService'
+
+async function getAuthUserId(req, res) {
+  const supabase = createClient(req, res)
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) {
+    return { userId: null, error: 'Unauthorized' }
+  }
+  return { userId: user.id, error: null }
+}
 
 export default async function handler(req, res) {
-  const { method, query, body } = req;
+  if (!applyRateLimit(req, res, { limit: 100, windowMs: 60_000 })) return;
 
-  const daysOfWeekMap = {
-    0: 'Sunday',
-    1: 'Monday',
-    2: 'Tuesday',
-    3: 'Wednesday',
-    4: 'Thursday',
-    5: 'Friday',
-    6: 'Saturday',
-  };
+  const { method, body } = req
 
   const supabase = createClient(req, res);
+
+  const { userId, error: authError } = await getAuthUserId(req, res);
+  if (authError) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
 
   // Helper function to check for existing alarms
   const checkExistingAlarm = async (alarmIdentifier, user_id, schedule_id) => {
@@ -62,41 +72,38 @@ export default async function handler(req, res) {
   };
 
   switch (method) {
-    case 'POST': // Or POST for fetching with a body
-      // Fetch alarms, optionally filtered by day
+    case 'POST':
       try {
-        const { user_id, schedule_id } = body;
+        const { schedule_id } = body;
 
-        // If no user_id provided, return error
-        if (!user_id || !schedule_id) {
-          res.status(400).json({ error: 'User ID and Schedule ID are required.' });
+        if (!validatePositiveInt(schedule_id)) {
+          res.status(400).json({ error: 'Schedule ID is required and must be a valid positive integer.' });
           return;
         }
 
-        // Explicitly select columns to exclude 'time'
-        let queryBuilder = supabase.from('alarms').select('id, label, day_of_week, start_time, end_time, user_id, schedule_id');
+        let queryBuilder = supabase.from('alarms').select('id, label, day_of_week, start_time, end_time, user_id, schedule_id, play_sound, sound_id, play_warning_sound, warning_sound_id, alarm_sounds!left(storage_url)');
 
-        queryBuilder = queryBuilder.eq('user_id', user_id).eq('schedule_id', schedule_id);
+        queryBuilder = queryBuilder.eq('user_id', userId).eq('schedule_id', schedule_id);
 
         const { data, error } = await queryBuilder.order('start_time', { ascending: true }); // Order by start_time
 
         if (data) {
-          const transformedData = {
-            'Sunday': [],
-            'Monday': [],
-            'Tuesday': [],
-            'Wednesday': [],
-            'Thursday': [],
-            'Friday': [],
-            'Saturday': [],
-          };
+          const transformedData = {}
+          DAYS_OF_WEEK.forEach(day => {
+            transformedData[day] = []
+          })
 
           data.forEach(alarm => {
-            const dayName = daysOfWeekMap[alarm.day_of_week];
+            const dayName = DAYS_OF_WEEK[alarm.day_of_week]
             if (dayName) {
-              transformedData[dayName].push(alarm);
+              transformedData[dayName].push({
+                ...alarm,
+                sound_url: alarm.alarm_sounds?.storage_url || null,
+                warning_sound_url: null,
+                alarm_sounds: undefined,
+              })
             }
-          });
+          })
           res.status(200).json(transformedData);
           return;
         }
@@ -114,37 +121,46 @@ export default async function handler(req, res) {
       break;
 
     case 'PUT':
-      // Create a new alarm
       try {
-        const { day_of_week, start_time, end_time, label, user_id, schedule_id } = body;
+        const { day_of_week, start_time, end_time, label, schedule_id, play_sound, sound_id, play_warning_sound, warning_sound_id } = body
 
-        // Check if required fields are present
-        if (!day_of_week && day_of_week !== 0 || !start_time || !end_time || !label || !user_id || !schedule_id) {
-          res.status(400).json({ error: 'Missing required fields: day_of_week, start_time, end_time, label, user_id, schedule_id.' });
-          return;
+        if ((!day_of_week && day_of_week !== 0) || !start_time || !end_time || !label || !schedule_id) {
+          res.status(400).json({ error: 'Missing required fields: day_of_week, start_time, end_time, label, schedule_id.' })
+          return
         }
 
-        // New validation: start_time cannot be >= end_time
+        if (!validateDayOfWeek(day_of_week)) {
+          res.status(400).json({ error: 'Invalid day of week.' })
+          return
+        }
+
+        if (!validateTime(start_time) || !validateTime(end_time)) {
+          res.status(400).json({ error: 'Invalid time format. Expected HH:MM or HH:MM:SS.' })
+          return
+        }
+
+        if (!validatePositiveInt(schedule_id)) {
+          res.status(400).json({ error: 'Schedule ID must be a valid positive integer.' })
+          return
+        }
+
+        const config = await getAppConfig(supabase)
+        const sanitizedLabel = sanitizeString(label, config.max_label_length)
+        if (!sanitizedLabel) {
+          res.status(400).json({ error: 'Label is required and cannot be empty.' })
+          return
+        }
+        if (label.length > config.max_label_length) {
+          res.status(400).json({ error: `Label cannot exceed ${config.max_label_length} characters.` })
+          return
+        }
+
         if (start_time >= end_time) {
           res.status(400).json({ error: 'End time cannot be before or the same as start time.' });
           return;
         }
 
-        // Check if user_id is a valid user_id
-        const userExists = await supabaseService.auth.admin.getUserById(user_id);
-
-        if(userExists.error){
-          res.status(500).json({ error: userExists.error.message });
-          return;
-        }
-
-        if (!userExists.data) {
-          res.status(400).json({ error: 'Invalid user ID.' });
-          return;
-        }
-
-        // Check if a user already has an alarm that overlaps with the new one
-        const { hasOverlap, error: overlapError } = await checkAlarmOverlap(day_of_week, start_time, end_time, user_id, schedule_id);
+        const { hasOverlap, error: overlapError } = await checkAlarmOverlap(day_of_week, start_time, end_time, userId, schedule_id);
         if (overlapError) {
           res.status(500).json({ error: overlapError.message });
           return;
@@ -157,12 +173,16 @@ export default async function handler(req, res) {
         const { data, error } = await supabase
           .from('alarms')
           .insert([{
-            user_id:user_id,
+            user_id: userId,
             schedule_id: schedule_id,
             day_of_week: day_of_week,
             start_time: start_time,
             end_time: end_time,
-            label: label }])
+            label: sanitizedLabel,
+            play_sound: play_sound || false,
+            sound_id: sound_id || null,
+            play_warning_sound: play_warning_sound || false,
+            warning_sound_id: warning_sound_id || null }])
           .select()
           .single();
 
@@ -179,18 +199,41 @@ export default async function handler(req, res) {
       break;
 
     case 'PATCH':
-      // Update an existing alarm
       try {
-        const { id, start_time, end_time, label } = body;
-        if (!id) {
-          res.status(400).json({ error: 'Timer ID is required.' });
-          return;
+        const { id, start_time, end_time, label, play_sound, sound_id, play_warning_sound, warning_sound_id } = body
+        if (!validatePositiveInt(id)) {
+          res.status(400).json({ error: 'Timer ID is required and must be a valid positive integer.' })
+          return
+        }
+
+        if (start_time && !validateTime(start_time)) {
+          res.status(400).json({ error: 'Invalid start time format.' })
+          return
+        }
+
+        if (end_time && !validateTime(end_time)) {
+          res.status(400).json({ error: 'Invalid end time format.' })
+          return
+        }
+
+        const config = await getAppConfig(supabase)
+        let sanitizedLabel
+        if (label !== undefined) {
+          sanitizedLabel = sanitizeString(label, config.max_label_length)
+          if (!sanitizedLabel) {
+            res.status(400).json({ error: 'Label cannot be empty.' })
+            return
+          }
+          if (label.length > config.max_label_length) {
+            res.status(400).json({ error: `Label cannot exceed ${config.max_label_length} characters.` })
+            return
+          }
         }
 
         const { data: alarmToUpdate, error: alarmToUpdateError } = await checkExistingAlarm({ id });
 
         if (alarmToUpdateError) {
-          if (alarmToUpdateError.code === 'PGRST116') { // No rows found
+          if (alarmToUpdateError.code === 'PGRST116') {
             res.status(404).json({ error: 'Timer not found.' });
             return;
           }
@@ -199,16 +242,23 @@ export default async function handler(req, res) {
           return;
         }
 
-        // Check if any update data is provided for start_time, end_time, or label
-        if (!start_time && !end_time && !label) {
-          res.status(400).json({ error: 'No update data provided for start_time, end_time, or label.' });
+        if (alarmToUpdate.user_id !== userId) {
+          res.status(403).json({ error: 'Forbidden: You do not own this timer.' });
+          return;
+        }
+        if (!start_time && !end_time && sanitizedLabel === undefined && play_sound === undefined && sound_id === undefined && play_warning_sound === undefined && warning_sound_id === undefined) {
+          res.status(400).json({ error: 'No update data provided for start_time, end_time, label, play_sound, sound_id, play_warning_sound, or warning_sound_id.' });
           return;
         }
 
         const updatePayload = {};
         if (start_time) updatePayload.start_time = start_time;
         if (end_time) updatePayload.end_time = end_time;
-        if (label) updatePayload.label = label;
+        if (sanitizedLabel !== undefined) updatePayload.label = sanitizedLabel;
+        if (play_sound !== undefined) updatePayload.play_sound = play_sound;
+        if (sound_id !== undefined) updatePayload.sound_id = sound_id;
+        if (play_warning_sound !== undefined) updatePayload.play_warning_sound = play_warning_sound;
+        if (warning_sound_id !== undefined) updatePayload.warning_sound_id = warning_sound_id;
 
         // New validation: If both start_time and end_time are provided or derived, check their relation
         const newStartTime = updatePayload.start_time || alarmToUpdate.start_time;
@@ -263,20 +313,29 @@ export default async function handler(req, res) {
       break;
 
     case 'DELETE':
-      // Delete an alarm or all alarms for a day
       try {
-        const { id, user_id, day_of_week } = body;
+        const { id, day_of_week } = body;
         
-        if (id) {
+        if (id !== undefined) {
+          if (!validatePositiveInt(id)) {
+            res.status(400).json({ error: 'Timer ID must be a valid positive integer.' });
+            return;
+          }
+
           const { data: alarmToDelete, error: alarmToDeleteError } = await checkExistingAlarm({ id });
 
           if (alarmToDeleteError) {
-            if (alarmToDeleteError.code === 'PGRST116') { // No rows found
+            if (alarmToDeleteError.code === 'PGRST116') {
               res.status(404).json({ error: 'Timer not found.' });
               return;
             }
             console.error('Supabase error:', alarmToDeleteError);
             res.status(500).json({ error: alarmToDeleteError.message });
+            return;
+          }
+
+          if (alarmToDelete.user_id !== userId) {
+            res.status(403).json({ error: 'Forbidden: You do not own this timer.' });
             return;
           }
 
@@ -290,27 +349,34 @@ export default async function handler(req, res) {
             return;
           }
 
-          res.status(200).end(); // Delete successful
+          res.status(200).end();
           return;
         } 
         
-        if (user_id && day_of_week !== undefined) {
+        if (day_of_week !== undefined) {
+          const { schedule_id } = body;
+          if (!validateDayOfWeek(day_of_week) || !validatePositiveInt(schedule_id)) {
+            res.status(400).json({ error: 'Valid day_of_week and positive integer schedule_id are required.' });
+            return;
+          }
+
           const { error } = await supabase
             .from('alarms')
             .delete()
-            .eq('user_id', user_id)
-            .eq('day_of_week', day_of_week);
+            .eq('user_id', userId)
+            .eq('day_of_week', day_of_week)
+            .eq('schedule_id', schedule_id);
 
           if (error) {
             res.status(500).json({ error: error.message });
             return;
           }
 
-          res.status(200).end(); // Bulk delete successful
+          res.status(200).end();
           return;
         }
 
-        res.status(400).json({ error: 'Timer ID or User ID and Day of Week are required.' });
+        res.status(400).json({ error: 'Timer ID or Day of Week is required.' });
       } catch (error) {
         res.status(500).json({ error: 'An unexpected error occurred.', details: error.message });
       }
