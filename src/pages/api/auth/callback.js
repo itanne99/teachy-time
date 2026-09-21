@@ -9,6 +9,11 @@ export default async function handler(req, res) {
   const { code, next = '/' } = req.query;
 
   if (code) {
+    if (next === '/reset-password') {
+      // Do not exchange code for session, pass it to the client as resetCode to prevent auto-login
+      return res.redirect(302, `${next}?resetCode=${code}`);
+    }
+
     const supabase = createClient(req, res);
     
     // Exchange the auth code for a session token

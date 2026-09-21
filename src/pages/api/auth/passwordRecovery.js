@@ -63,14 +63,28 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: "Password must be at least 6 characters long." });
         }
 
-        const { error } = await supabase.auth.updateUser({
+        if (!code) {
+          return res.status(400).json({ error: "Missing required field: code." });
+        }
+
+        // 1. Exchange the PKCE code for a session
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(String(code));
+        
+        if (exchangeError) {
+          return res.status(401).json({ error: "Invalid or expired password reset link." });
+        }
+
+        // 2. Update the user's password
+        const { error: updateError } = await supabase.auth.updateUser({
           password: password,
-          captchaToken: code || undefined,
         });
 
-        if (error) {
-          throw error;
+        if (updateError) {
+          throw updateError;
         }
+
+        // 3. Immediately sign out to prevent auto-login
+        await supabase.auth.signOut();
 
         res.status(200).json({ message: "Password updated successfully." });
       } catch (error) {

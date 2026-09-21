@@ -2,8 +2,11 @@ import React, { useState } from 'react';
 import { Container, Row, Col, Form, Button, Alert, InputGroup } from 'react-bootstrap';
 import { ShieldLockFill, KeyFill, Check2Circle, Eye, EyeSlash, CheckCircleFill, Circle, XCircleFill, ArrowLeft, ShieldCheck } from 'react-bootstrap-icons';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 
 export default function ResetPassword() {
+  const router = useRouter();
+  const { resetCode: code } = router.query;
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -68,12 +71,21 @@ export default function ResetPassword() {
     setIsLoading(true);
 
     try {
-      // In a real application, extract access token from URL fragment and update user.
-      // For this implementation, we simulate success as per UI workflow.
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      const response = await fetch('/api/auth/passwordRecovery', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password, code })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to reset password. Link may be invalid or expired.');
+      }
+      
       setSuccess(true);
     } catch (err) {
-      setError(err.message || 'Failed to reset password. Link may be invalid or expired.');
+      setError(err.message);
     } finally {
       setIsLoading(false);
     }
@@ -119,7 +131,7 @@ export default function ResetPassword() {
                       className="border-start-0 border-end-0 ps-0 form-control-focus-ring"
                       required
                     />
-                    <Button variant="outline-secondary" className="border-start-0 password-toggle-btn" onClick={() => setShowPassword(!showPassword)}>
+                    <Button className="border border-start-0 password-toggle-btn text-secondary bg-transparent" onClick={() => setShowPassword(!showPassword)}>
                       {showPassword ? <EyeSlash size={16} /> : <Eye size={16} />}
                     </Button>
                   </InputGroup>
@@ -146,7 +158,7 @@ export default function ResetPassword() {
                       className="border-start-0 border-end-0 ps-0 form-control-focus-ring"
                       required
                     />
-                    <Button variant="outline-secondary" className="border-start-0 password-toggle-btn" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                    <Button className="border border-start-0 password-toggle-btn text-secondary bg-transparent" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
                       {showConfirmPassword ? <EyeSlash size={16} /> : <Eye size={16} />}
                     </Button>
                   </InputGroup>
