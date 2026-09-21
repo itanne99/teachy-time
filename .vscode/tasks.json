@@ -27,6 +27,38 @@
         "reveal": "silent",
         "panel": "dedicated"
       }
+    },
+    {
+      "label": "redis: start",
+      "type": "shell",
+      "command": "docker-compose up -d redis srh",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "redis: stop",
+      "type": "shell",
+      "command": "docker-compose stop redis srh",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "services: start",
+      "dependsOn": ["supabase: start", "redis: start"],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    },
+    {
+      "label": "services: stop",
+      "dependsOn": ["supabase: stop", "redis: stop"],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
     }
   ]
 }
