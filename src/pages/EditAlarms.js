@@ -96,15 +96,15 @@ export default function EditAlarms() {
     const body = isUpdating
       ? { id: alarmToSave.id, start_time: alarmToSave.start_time, end_time: alarmToSave.end_time, label: alarmToSave.label, play_sound: alarmToSave.play_sound, sound_id: alarmToSave.sound_id, play_warning_sound: alarmToSave.play_warning_sound, warning_sound_id: alarmToSave.warning_sound_id }
       : {
-          ...alarmToSave,
-          user_id: user.id,
-          schedule_id: currentScheduleId,
-          day_of_week: DAYS_OF_WEEK.indexOf(activeDay),
-          play_sound: alarmToSave.play_sound || false,
-          sound_id: alarmToSave.sound_id || null,
-          play_warning_sound: alarmToSave.play_warning_sound || false,
-          warning_sound_id: alarmToSave.warning_sound_id || null,
-        }
+        ...alarmToSave,
+        user_id: user.id,
+        schedule_id: currentScheduleId,
+        day_of_week: DAYS_OF_WEEK.indexOf(activeDay),
+        play_sound: alarmToSave.play_sound || false,
+        sound_id: alarmToSave.sound_id || null,
+        play_warning_sound: alarmToSave.play_warning_sound || false,
+        warning_sound_id: alarmToSave.warning_sound_id || null,
+      }
 
     try {
       const response = await fetch(endpoint, {
@@ -140,9 +140,13 @@ export default function EditAlarms() {
   };
 
   const performCopy = async (fromDay, toDay) => {
-    setLoading(true)
-    const alarmsToCopy = alarms[fromDay] || []
-    const toDayIndex = DAYS_OF_WEEK.indexOf(toDay)
+    if (!user?.id || !currentScheduleId) {
+      console.error("Missing user ID or current schedule ID");
+      return;
+    }
+    setLoading(true);
+    const alarmsToCopy = alarms[fromDay] || [];
+    const toDayIndex = DAYS_OF_WEEK.indexOf(toDay);
 
     try {
       const deleteResponse = await fetch(API_ENDPOINTS.ALARMS, {

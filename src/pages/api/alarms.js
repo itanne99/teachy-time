@@ -31,7 +31,7 @@ export default async function handler(req, res) {
 
     if (alarmIdentifier.id) {
       queryBuilder = queryBuilder.eq('id', alarmIdentifier.id);
-    } else if (alarmIdentifier.day_of_week && alarmIdentifier.start_time && alarmIdentifier.end_time && schedule_id) { // Updated condition to use start_time and end_time
+    } else if ((alarmIdentifier.day_of_week !== undefined && alarmIdentifier.day_of_week !== null) && alarmIdentifier.start_time && alarmIdentifier.end_time && schedule_id) { // Updated condition to use start_time and end_time
       queryBuilder = queryBuilder
         .eq('day_of_week', alarmIdentifier.day_of_week)
         .eq('start_time', alarmIdentifier.start_time) // Use start_time
@@ -188,7 +188,8 @@ export default async function handler(req, res) {
             play_sound: play_sound || false,
             sound_id: sound_id || null,
             play_warning_sound: play_warning_sound || false,
-            warning_sound_id: warning_sound_id || null }])
+            warning_sound_id: warning_sound_id || null
+          }])
           .select()
           .single();
 
@@ -320,8 +321,8 @@ export default async function handler(req, res) {
 
     case 'DELETE':
       try {
-        const { id, day_of_week } = body;
-        
+        const { id, user_id, day_of_week, schedule_id } = body;
+
         if (id !== undefined) {
           if (!validatePositiveInt(id)) {
             res.status(400).json({ error: 'Timer ID must be a valid positive integer.' });
@@ -357,12 +358,11 @@ export default async function handler(req, res) {
 
           res.status(200).end();
           return;
-        } 
-        
-        if (day_of_week !== undefined) {
-          const { schedule_id } = body;
-          if (!validateDayOfWeek(day_of_week) || !validatePositiveInt(schedule_id)) {
-            res.status(400).json({ error: 'Valid day_of_week and positive integer schedule_id are required.' });
+        }
+
+        if (user_id && schedule_id && day_of_week !== undefined) {
+          if (!validateDayOfWeek(day_of_week) || !validatePositiveInt(schedule_id) || !validatePositiveInt(user_id)) {
+            res.status(400).json({ error: 'Valid day_of_week, positive integer user_id, and positive integer schedule_id are required.' });
             return;
           }
 
@@ -382,7 +382,7 @@ export default async function handler(req, res) {
           return;
         }
 
-        res.status(400).json({ error: 'Timer ID or Day of Week is required.' });
+        res.status(400).json({ error: 'Timer ID or User ID, Schedule ID, and Day of Week are required.' });
       } catch (error) {
         res.status(500).json({ error: 'An unexpected error occurred.', details: error.message });
       }
